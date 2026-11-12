@@ -39,30 +39,33 @@ model Passage {
 }
 
 model PassageSection {
-  id          String   @id @default(cuid())
-  passageId   String
-  orderIndex  Int
-  englishText String   @db.Text
-  bengaliText String   @db.Text
-  passage     Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  passageId           String
+  orderIndex          Int
+  englishText         String   @db.Text
+  banglaPronunciation String?  @db.Text // বাংলা উচ্চারণ (যেমন: ওয়ান্স আপন আ টাইম...)
+  bengaliText         String   @db.Text // বাংলা অনুবাদ
+  passage             Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
 
   @@index([passageId, orderIndex])
 }
 
 model Vocabulary {
-  id                String   @id @default(cuid())
-  passageId         String?
-  word              String
-  phonetic          String?
-  partOfSpeech      String?  // noun, verb, adjective, adverb, phrase, idiom
-  bengaliMeaning    String
-  englishDefinition String?  @db.Text
-  exampleSentenceEn String?  @db.Text
-  exampleSentenceBn String?  @db.Text
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  passageId           String?
+  word                String
+  cleanWord           String?
+  phonetic            String?
+  banglaPronunciation String?  // বাংলা উচ্চারণ (যেমন: অ্যানশেন্ট)
+  partOfSpeech        String?  // noun, verb, adjective, adverb, phrase, idiom
+  bengaliMeaning      String   // বাংলা অর্থ
+  englishDefinition   String?  @db.Text
+  exampleSentenceEn   String?  @db.Text
+  exampleSentenceBn   String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  passage           Passage? @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  passage             Passage? @relation(fields: [passageId], references: [id], onDelete: Cascade)
 
   @@index([passageId])
   @@index([word])

@@ -18,7 +18,7 @@ const hindSiliguri = Hind_Siliguri({
 export const metadata: Metadata = {
   title: "BhashaRead - Bilingual English & Bengali Reader",
   description:
-    "Mobile-first English reading education app with integrated Bengali translations, tap-to-reveal sentences, and interactive vocabulary bottom sheets.",
+    "Mobile-first English reading education app with integrated Bengali pronunciations, translations, and tap-to-reveal word meanings.",
 };
 
 export const viewport: Viewport = {
@@ -39,7 +39,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${hindSiliguri.variable} antialiased h-full`}
     >
-      <body className="min-h-full font-sans bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+      <body className="min-h-full font-sans bg-slate-100 text-slate-900 selection:bg-indigo-500 selection:text-white">
         {children}
       </body>
     </html>

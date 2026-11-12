@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Volume2, Bookmark, Check, ChevronRight, ChevronLeft } from "lucide-react";
-import { VocabularyItem, ThemeMode } from "@/types/reading";
+import { X, Volume2, Bookmark, Check, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { VocabularyItem } from "@/types/reading";
 
 interface VocabularyBottomSheetProps {
   vocab: VocabularyItem | null;
   vocabList?: VocabularyItem[];
-  theme: ThemeMode;
   onClose: () => void;
   onSelectVocab?: (vocab: VocabularyItem) => void;
 }
@@ -15,7 +14,6 @@ interface VocabularyBottomSheetProps {
 export default function VocabularyBottomSheet({
   vocab,
   vocabList = [],
-  theme,
   onClose,
   onSelectVocab,
 }: VocabularyBottomSheetProps) {
@@ -25,7 +23,10 @@ export default function VocabularyBottomSheet({
   if (!vocab) return null;
 
   const currentIndex = vocabList.findIndex(
-    (v) => v.id === vocab.id || v.word.toLowerCase() === vocab.word.toLowerCase()
+    (v) =>
+      v.id === vocab.id ||
+      (v.cleanWord && vocab.cleanWord && v.cleanWord.toLowerCase() === vocab.cleanWord.toLowerCase()) ||
+      v.word.toLowerCase() === vocab.word.toLowerCase()
   );
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < vocabList.length - 1;
@@ -33,9 +34,10 @@ export default function VocabularyBottomSheet({
   const playPronunciation = () => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(vocab.word);
+      const clean = vocab.cleanWord || vocab.word.replace(/[^a-zA-Z]/g, "");
+      const utterance = new SpeechSynthesisUtterance(clean);
       utterance.lang = "en-US";
-      utterance.rate = 0.85; // Slightly slower for language learners
+      utterance.rate = 0.85; // Learner-friendly speed
       setIsPlayingAudio(true);
       utterance.onend = () => setIsPlayingAudio(false);
       utterance.onerror = () => setIsPlayingAudio(false);
@@ -45,9 +47,9 @@ export default function VocabularyBottomSheet({
 
   const handleCopy = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(`${vocab.word} - ${vocab.bengaliMeaning}`);
+      navigator.clipboard.writeText(`${vocab.word} (${vocab.banglaPronunciation || ""}) - ${vocab.bengaliMeaning}`);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setTimeout(() => setCopied(false), 1600);
     }
   };
 
@@ -55,74 +57,67 @@ export default function VocabularyBottomSheet({
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Bottom Sheet Container (Mobile-first, centered in desktop frame) */}
+      {/* Bottom Sheet Container (High Contrast Light Mode) */}
       <div
-        className="relative z-10 w-full max-w-md mx-auto rounded-t-3xl border-t shadow-2xl p-6 transition-all duration-300 animate-slide-up"
-        style={{
-          backgroundColor: "var(--bg-secondary)",
-          borderColor: "var(--border-color)",
-          color: "var(--text-primary)",
-        }}
+        className="relative z-10 w-full max-w-md mx-auto rounded-t-3xl bg-white border-t border-slate-200 shadow-2xl p-6 transition-all duration-300 animate-slide-up text-slate-900 max-h-[85vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
       >
         {/* Drag Handle Indicator */}
-        <div className="w-12 h-1.5 bg-slate-400/40 rounded-full mx-auto mb-4" />
+        <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4" />
 
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             {vocab.partOfSpeech && (
-              <span className="px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+              <span className="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
                 {vocab.partOfSpeech}
               </span>
             )}
             {vocabList.length > 1 && currentIndex >= 0 && (
-              <span className="text-xs opacity-60">
-                {currentIndex + 1} of {vocabList.length}
+              <span className="text-xs text-slate-500 font-medium">
+                Word {currentIndex + 1} of {vocabList.length}
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Quick Copy / Bookmark Action */}
             <button
               onClick={handleCopy}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 active:scale-95 transition-transform"
               title="Copy vocabulary definition"
               aria-label="Copy word"
             >
               {copied ? (
-                <Check className="w-5 h-5 text-emerald-500" />
+                <Check className="w-5 h-5 text-emerald-600" />
               ) : (
-                <Bookmark className="w-5 h-5 opacity-70" />
+                <Bookmark className="w-5 h-5" />
               )}
             </button>
 
-            {/* Close Button (44px min tap target) */}
             <button
               onClick={onClose}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-transform"
               aria-label="Close dialog"
             >
-              <X className="w-5 h-5 opacity-80" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Word & Pronunciation */}
+        {/* Word, Phonetic & Audio Pronunciation */}
         <div className="mt-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight capitalize">
-              {vocab.word}
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 capitalize">
+              {vocab.cleanWord || vocab.word}
             </h2>
             {vocab.phonetic && (
-              <p className="text-sm font-mono opacity-70 mt-0.5">
+              <p className="text-xs font-mono text-slate-500 mt-0.5">
                 {vocab.phonetic}
               </p>
             )}
@@ -133,8 +128,8 @@ export default function VocabularyBottomSheet({
             onClick={playPronunciation}
             className={`min-w-[48px] min-h-[48px] rounded-2xl flex items-center justify-center shadow-xs transition-all active:scale-95 ${
               isPlayingAudio
-                ? "bg-indigo-600 text-white animate-pulse"
-                : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/25"
+                ? "bg-indigo-700 text-white animate-pulse"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
             title="Listen to English pronunciation"
             aria-label="Listen pronunciation"
@@ -143,19 +138,34 @@ export default function VocabularyBottomSheet({
           </button>
         </div>
 
-        {/* Bengali Meaning Highlight Box */}
-        <div
-          className="mt-4 p-4 rounded-2xl border"
-          style={{
-            backgroundColor: "var(--highlight-vocab)",
-            borderColor: "var(--highlight-vocab-border)",
-            color: "var(--highlight-vocab-text)",
-          }}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wider opacity-75 mb-1">
-            বাংলা অর্থ (Bengali Meaning)
+        {/* Bengali Pronunciation Box (বাংলা উচ্চারণ) */}
+        {vocab.banglaPronunciation && (
+          <div className="mt-3.5 p-3 rounded-2xl bg-violet-50 border border-violet-200 text-violet-950 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-violet-700 uppercase tracking-wider block">
+                বাংলা উচ্চারণ (Pronunciation in Bangla)
+              </span>
+              <span className="font-bengali text-lg font-bold text-violet-900 mt-0.5 block">
+                {vocab.banglaPronunciation}
+              </span>
+            </div>
+            <button
+              onClick={playPronunciation}
+              className="text-xs font-semibold text-violet-700 hover:underline flex items-center gap-1 active:scale-95"
+            >
+              <Volume2 className="w-4 h-4" />
+              শুনুন
+            </button>
           </div>
-          <div className="font-bengali text-2xl font-bold leading-relaxed">
+        )}
+
+        {/* Bengali Meaning Highlight Box (বাংলা অর্থ) */}
+        <div className="mt-3.5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-indigo-950">
+          <div className="text-xs font-semibold uppercase tracking-wider text-indigo-800 mb-1 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5" />
+            বাংলা অর্থ (Meaning)
+          </div>
+          <div className="font-bengali text-xl font-bold text-slate-900 leading-snug">
             {vocab.bengaliMeaning}
           </div>
         </div>
@@ -163,67 +173,61 @@ export default function VocabularyBottomSheet({
         {/* English Definition */}
         {vocab.englishDefinition && (
           <div className="mt-3.5">
-            <div className="text-xs font-semibold uppercase tracking-wider opacity-60 mb-0.5">
-              Definition
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">
+              English Definition
             </div>
-            <p className="text-sm leading-relaxed opacity-90">
+            <p className="text-xs leading-relaxed text-slate-700 font-medium">
               {vocab.englishDefinition}
             </p>
           </div>
         )}
 
-        {/* Context Sentence Example */}
+        {/* Example Context Sentence */}
         {(vocab.exampleSentenceEn || vocab.exampleSentenceBn) && (
-          <div
-            className="mt-3.5 p-3.5 rounded-xl border text-sm"
-            style={{
-              backgroundColor: "var(--bg-surface)",
-              borderColor: "var(--border-color)",
-            }}
-          >
-            <div className="text-xs font-semibold uppercase tracking-wider opacity-60 mb-1">
-              Context Example
+          <div className="mt-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+              ব্যবহার ও উদাহরণ (Example Sentence)
             </div>
             {vocab.exampleSentenceEn && (
-              <p className="font-medium italic text-slate-800 dark:text-slate-200">
+              <p className="font-semibold text-slate-900 italic text-sm">
                 &ldquo;{vocab.exampleSentenceEn}&rdquo;
               </p>
             )}
             {vocab.exampleSentenceBn && (
-              <p className="font-bengali text-slate-600 dark:text-slate-400 mt-1">
+              <p className="font-bengali text-slate-700 mt-1 font-medium text-[13px]">
                 {vocab.exampleSentenceBn}
               </p>
             )}
           </div>
         )}
 
-        {/* Bottom Navigation for multiple vocabs (Thumb zone friendly) */}
+        {/* Bottom Navigation for multiple vocabs */}
         {vocabList.length > 1 && onSelectVocab && (
-          <div className="mt-5 pt-3 flex items-center justify-between border-t border-black/10 dark:border-white/10">
+          <div className="mt-5 pt-3 flex items-center justify-between border-t border-slate-100">
             <button
               onClick={() => hasPrev && onSelectVocab(vocabList[currentIndex - 1])}
               disabled={!hasPrev}
-              className={`min-h-[44px] px-3 flex items-center gap-1.5 text-xs font-medium rounded-xl transition-all ${
+              className={`min-h-[44px] px-3 flex items-center gap-1 text-xs font-semibold rounded-xl transition-all ${
                 hasPrev
-                  ? "hover:bg-black/5 dark:hover:bg-white/10 active:scale-95"
-                  : "opacity-30 cursor-not-allowed"
+                  ? "hover:bg-slate-100 text-slate-700 active:scale-95"
+                  : "opacity-30 text-slate-400 cursor-not-allowed"
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
             </button>
 
-            <span className="text-xs font-medium opacity-60">
-              Swipe or tap arrows
+            <span className="text-xs font-medium text-slate-500">
+              Tap any word to inspect
             </span>
 
             <button
               onClick={() => hasNext && onSelectVocab(vocabList[currentIndex + 1])}
               disabled={!hasNext}
-              className={`min-h-[44px] px-3 flex items-center gap-1.5 text-xs font-medium rounded-xl transition-all ${
+              className={`min-h-[44px] px-3 flex items-center gap-1 text-xs font-semibold rounded-xl transition-all ${
                 hasNext
-                  ? "hover:bg-black/5 dark:hover:bg-white/10 active:scale-95"
-                  : "opacity-30 cursor-not-allowed"
+                  ? "hover:bg-slate-100 text-slate-700 active:scale-95"
+                  : "opacity-30 text-slate-400 cursor-not-allowed"
               }`}
             >
               Next

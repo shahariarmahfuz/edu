@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Plus,
@@ -13,12 +12,21 @@ import {
   FileText,
   Code,
   BookOpen,
+  Volume2,
 } from "lucide-react";
 import { Difficulty } from "@/types/reading";
 
+interface SectionEntry {
+  englishText: string;
+  banglaPronunciation: string;
+  bengaliText: string;
+}
+
 interface VocabEntry {
   word: string;
+  cleanWord: string;
   phonetic: string;
+  banglaPronunciation: string;
   partOfSpeech: string;
   bengaliMeaning: string;
   englishDefinition: string;
@@ -27,8 +35,7 @@ interface VocabEntry {
 }
 
 export default function UploadPage() {
-  const router = useRouter();
-  const [tab, setTab] = useState<"form" | "json">("form");
+  const [tab, setTab] = useState<"json" | "form">("json");
 
   // Form State
   const [titleEn, setTitleEn] = useState("");
@@ -38,13 +45,21 @@ export default function UploadPage() {
   const [readingTimeMinutes, setReadingTimeMinutes] = useState(3);
   const [summaryEn, setSummaryEn] = useState("");
   const [summaryBn, setSummaryBn] = useState("");
-  const [englishContent, setEnglishContent] = useState("");
-  const [bengaliContent, setBengaliContent] = useState("");
+
+  const [sections, setSections] = useState<SectionEntry[]>([
+    {
+      englishText: "",
+      banglaPronunciation: "",
+      bengaliText: "",
+    },
+  ]);
 
   const [vocabularies, setVocabularies] = useState<VocabEntry[]>([
     {
       word: "",
+      cleanWord: "",
       phonetic: "",
+      banglaPronunciation: "",
       partOfSpeech: "noun",
       bengaliMeaning: "",
       englishDefinition: "",
@@ -53,29 +68,75 @@ export default function UploadPage() {
     },
   ]);
 
-  // JSON Mode State
-  const sampleJson = `{
-  "titleEn": "The Golden Harvest",
-  "titleBn": "সোনার ফসল",
-  "category": "Rural Life",
-  "difficulty": "BEGINNER",
-  "readingTimeMinutes": 3,
-  "summaryEn": "A tale about the joy and hard work of Bengali village farmers during the harvest festival.",
-  "summaryBn": "নবান্ন উৎসবের সময় বাংলার গ্রামীণ কৃষকদের আনন্দ ও পরিশ্রমের গল্প।",
-  "englishContent": "In late autumn, the golden paddy fields of Bengal ripple in the gentle breeze. Farmers awaken before dawn to harvest the crops with traditional sickles.",
-  "bengaliContent": "হেমন্তের শেষ ভাগে বাংলার সোনালী ধানক্ষেতগুলো মৃদু বাতাসে দোলে। কৃষকেরা ঐতিহ্যবাহী কাস্তে নিয়ে ফসল কাটার জন্য ভোরের আগেই জেগে ওঠে।",
-  "vocabularies": [
+  // Clean, intuitive JSON template that the user requested
+  const sampleJson = JSON.stringify(
     {
-      "word": "harvest",
-      "phonetic": "/ˈhɑː.vɪst/",
-      "partOfSpeech": "noun",
-      "bengaliMeaning": "ফসল সংগ্রহ / নবান্ন",
-      "englishDefinition": "The process or period of gathering in crops.",
-      "exampleSentenceEn": "Farmers awaken early to harvest the crops.",
-      "exampleSentenceBn": "ফসল কাটার জন্য কৃষকেরা ভোরে ঘুম থেকে ওঠে।"
-    }
-  ]
-}`;
+      titleEn: "The Honest Woodcutter",
+      titleBn: "সৎ কাঠুরিয়া",
+      category: "Moral Story",
+      difficulty: "BEGINNER",
+      readingTimeMinutes: 3,
+      summaryEn: "A story about a humble woodcutter whose honesty was rewarded by a river spirit.",
+      summaryBn: "এক দরিদ্র কাঠুরিয়ার গল্প যার সততা নদীর দেবী দ্বারা পুরস্কৃত হয়েছিল।",
+      sections: [
+        {
+          orderIndex: 0,
+          englishText: "A poor woodcutter was cutting wood near a deep river.",
+          banglaPronunciation: "আ পুওর উডকাটার ওয়াজ কাটিং উড নিয়ার আ ডিপ রিভার।",
+          bengaliText: "এক দরিদ্র কাঠুরিয়া গভীর নদীর ধারে কাঠ কাটছিল।"
+        },
+        {
+          orderIndex: 1,
+          englishText: "Suddenly, his iron axe slipped from his hands and fell into the water.",
+          banglaPronunciation: "সাডেনলি, হিজ আয়রন অ্যাক্স স্লিপড ফ্রম হিজ হ্যান্ডস অ্যান্ড ফেল ইনটু দ্য ওয়াটার।",
+          bengaliText: "হঠাৎ তার লোহার কুড়ালটি হাত থেকে পিছলে পানিতে পড়ে গেল।"
+        },
+        {
+          orderIndex: 2,
+          englishText: "He began to weep because he had no money to buy another axe.",
+          banglaPronunciation: "হি বিগান টু উইপ বিকজ হি হ্যাড নো মানি টু বাই অ্যানাদার অ্যাক্স।",
+          bengaliText: "সে কাঁদতে লাগল কারণ আরেকটি কুড়াল কেনার মতো টাকা তার কাছে ছিল না।"
+        }
+      ],
+      vocabularies: [
+        {
+          word: "woodcutter",
+          cleanWord: "woodcutter",
+          phonetic: "/ˈwʊdˌkʌt.ər/",
+          banglaPronunciation: "উডকাটার",
+          partOfSpeech: "noun",
+          bengaliMeaning: "কাঠুরিয়া",
+          englishDefinition: "A person who cuts down trees or chops wood.",
+          exampleSentenceEn: "The honest woodcutter worked hard every day.",
+          exampleSentenceBn: "সৎ কাঠুরিয়া প্রতিদিন কঠোর পরিশ্রম করত।"
+        },
+        {
+          word: "slipped",
+          cleanWord: "slipped",
+          phonetic: "/slɪpt/",
+          banglaPronunciation: "স্লিপড",
+          partOfSpeech: "verb",
+          bengaliMeaning: "পিছলে গেল / হাত ফসকে গেল",
+          englishDefinition: "Lost footing or dropped accidentally.",
+          exampleSentenceEn: "The axe slipped from his wet hands.",
+          exampleBn: "ভেজা হাত থেকে কুড়ালটি পিছলে গেল।"
+        },
+        {
+          word: "weep",
+          cleanWord: "weep",
+          phonetic: "/wiːp/",
+          banglaPronunciation: "উইপ",
+          partOfSpeech: "verb",
+          bengaliMeaning: "কান্নাকাটি করা / অশ্রুপাত করা",
+          englishDefinition: "Shed tears; cry deeply.",
+          exampleSentenceEn: "He began to weep in despair.",
+          exampleSentenceBn: "সে হতাশায় কাঁদতে লাগল।"
+        }
+      ]
+    },
+    null,
+    2
+  );
 
   const [jsonInput, setJsonInput] = useState(sampleJson);
 
@@ -84,12 +145,37 @@ export default function UploadPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successSlug, setSuccessSlug] = useState<string | null>(null);
 
+  const handleAddSection = () => {
+    setSections((prev) => [
+      ...prev,
+      { englishText: "", banglaPronunciation: "", bengaliText: "" },
+    ]);
+  };
+
+  const handleRemoveSection = (index: number) => {
+    setSections((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSectionChange = (
+    index: number,
+    field: keyof SectionEntry,
+    value: string
+  ) => {
+    setSections((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
   const handleAddVocabRow = () => {
     setVocabularies((prev) => [
       ...prev,
       {
         word: "",
+        cleanWord: "",
         phonetic: "",
+        banglaPronunciation: "",
         partOfSpeech: "noun",
         bengaliMeaning: "",
         englishDefinition: "",
@@ -128,18 +214,19 @@ export default function UploadPage() {
         try {
           payload = JSON.parse(jsonInput);
         } catch (err: any) {
-          throw new Error("Invalid JSON format. Please verify syntax.");
+          throw new Error("Invalid JSON format. Please verify commas and quotes.");
         }
       } else {
-        // Validate required fields
         if (!titleEn.trim()) throw new Error("English Title is required");
         if (!titleBn.trim()) throw new Error("Bengali Title is required");
-        if (!englishContent.trim())
-          throw new Error("English Content is required");
-        if (!bengaliContent.trim())
-          throw new Error("Bengali Content is required");
 
-        // Filter valid vocabulary entries (require at least word + bengaliMeaning)
+        const validSections = sections.filter(
+          (s) => s.englishText.trim() && s.bengaliText.trim()
+        );
+        if (validSections.length === 0) {
+          throw new Error("At least one sentence section is required");
+        }
+
         const validVocabs = vocabularies.filter(
           (v) => v.word.trim() && v.bengaliMeaning.trim()
         );
@@ -152,8 +239,12 @@ export default function UploadPage() {
           readingTimeMinutes: Number(readingTimeMinutes) || 3,
           summaryEn,
           summaryBn,
-          englishContent,
-          bengaliContent,
+          sections: validSections.map((s, idx) => ({
+            orderIndex: idx,
+            englishText: s.englishText.trim(),
+            banglaPronunciation: s.banglaPronunciation.trim(),
+            bengaliText: s.bengaliText.trim(),
+          })),
           vocabularies: validVocabs,
         };
       }
@@ -179,20 +270,22 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20">
-      {/* Mobile Top Header */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 font-sans">
+      {/* Mobile Top Header (Light Mode) */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <Link
             href="/"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl hover:bg-slate-800 active:scale-95 transition-transform"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl hover:bg-slate-100 active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-300" />
+            <ArrowLeft className="w-5 h-5 text-slate-700" />
           </Link>
           <div className="text-center">
-            <h1 className="text-base font-bold text-white">Content Manager</h1>
-            <p className="text-[11px] text-slate-400">
-              Upload Bilingual Passages to Neon DB
+            <h1 className="text-base font-bold text-slate-900">
+              নতুন প্যাসেজ যুক্ত করুন
+            </h1>
+            <p className="text-[11px] text-slate-500 font-bengali">
+              বাংলা উচ্চারণ ও অর্থ সহ JSON আপলোড
             </p>
           </div>
           <div className="w-[44px]" />
@@ -202,36 +295,33 @@ export default function UploadPage() {
       <main className="max-w-md mx-auto px-4 pt-5">
         {/* Success Modal / Banner */}
         {successSlug && (
-          <div className="mb-6 p-4 rounded-3xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-200 space-y-3">
+          <div className="mb-6 p-4 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-3 shadow-xs">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
               <span className="font-bold text-sm">
-                Passage Saved Successfully!
+                প্যাসেজটি সফলভাবে ডাটাবেজে সংরক্ষণ হয়েছে!
               </span>
             </div>
-            <p className="text-xs opacity-90">
-              Your article and vocabulary were stored into Neon Serverless
-              PostgreSQL.
+            <p className="text-xs text-slate-600">
+              প্যাসেজের বাক্য, বাংলা উচ্চারণ ও শব্দার্থ Neon PostgreSQL ডাটাবেজে যুক্ত হয়েছে।
             </p>
             <div className="flex gap-2 pt-1">
               <Link
                 href={`/read/${successSlug}`}
-                className="min-h-[44px] flex-1 flex items-center justify-center gap-2 px-4 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 active:scale-95"
+                className="min-h-[44px] flex-1 flex items-center justify-center gap-2 px-4 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/20"
               >
                 <BookOpen className="w-4 h-4" />
-                Open in Reader
+                পড়া শুরু করুন (Open Reader)
               </Link>
               <button
                 onClick={() => {
                   setSuccessSlug(null);
                   setTitleEn("");
                   setTitleBn("");
-                  setEnglishContent("");
-                  setBengaliContent("");
                 }}
-                className="min-h-[44px] px-3 rounded-xl bg-slate-800 text-slate-200 text-xs font-medium hover:bg-slate-700"
+                className="min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100"
               >
-                Upload Another
+                আরেকটি যোগ করুন
               </button>
             </div>
           </div>
@@ -239,37 +329,37 @@ export default function UploadPage() {
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-950/80 border border-rose-500/30 text-rose-200 flex items-start gap-2.5">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <div className="text-xs leading-relaxed">{errorMsg}</div>
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-xs leading-relaxed font-medium">{errorMsg}</div>
           </div>
         )}
 
         {/* Mode Switcher Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-900 border border-slate-800 mb-5">
-          <button
-            type="button"
-            onClick={() => setTab("form")}
-            className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all ${
-              tab === "form"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            Guided Form
-          </button>
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-200/80 mb-5">
           <button
             type="button"
             onClick={() => setTab("json")}
-            className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all ${
+            className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all ${
               tab === "json"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-white text-indigo-700 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Code className="w-4 h-4" />
-            JSON Seeder
+            JSON Seeder (সুপার ফাস্ট)
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("form")}
+            className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+              tab === "form"
+                ? "bg-white text-indigo-700 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            ম্যানুয়াল ফর্ম
           </button>
         </div>
 
@@ -278,32 +368,37 @@ export default function UploadPage() {
             /* JSON Seeder Tab */
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-300">
-                  Paste JSON Payload
-                </label>
+                <div>
+                  <label className="text-xs font-bold text-slate-800">
+                    JSON পেস্ট করুন
+                  </label>
+                  <p className="text-[11px] text-slate-500 font-bengali">
+                    নিচের টেমপ্লেটটি এডিট করে সহজেই নতুন গল্প আপলোড করুন
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setJsonInput(sampleJson)}
-                  className="text-[11px] text-indigo-400 hover:underline"
+                  className="text-xs font-semibold text-indigo-600 hover:underline"
                 >
-                  Reset Template
+                  টেমপ্লেট রিসেট
                 </button>
               </div>
+
               <textarea
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
-                rows={16}
-                className="w-full p-3 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                placeholder="Paste valid JSON passage structure..."
+                rows={18}
+                className="w-full p-3.5 rounded-2xl bg-white border border-slate-300 font-mono text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-xs"
+                placeholder="Paste valid JSON..."
               />
             </div>
           ) : (
             /* Guided Form Tab */
             <>
-              {/* Titles */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     English Title *
                   </label>
                   <input
@@ -311,36 +406,35 @@ export default function UploadPage() {
                     required
                     value={titleEn}
                     onChange={(e) => setTitleEn(e.target.value)}
-                    placeholder="e.g. The Brave Little Sparrow"
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. The Honest Woodcutter"
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Bengali Title (বাংলা শিরোনাম) *
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    বাংলা শিরোনাম *
                   </label>
                   <input
                     type="text"
                     required
                     value={titleBn}
                     onChange={(e) => setTitleBn(e.target.value)}
-                    placeholder="e.g. সাহসী চড়ুই পাখি"
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-900 border border-slate-800 font-bengali text-sm text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    placeholder="যেমন: সৎ কাঠুরিয়া"
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-300 font-bengali text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
 
-              {/* Category & Difficulty */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Category
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ক্যাটাগরি
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="Moral Story">Moral Story</option>
                     <option value="Science & Nature">Science & Nature</option>
@@ -351,13 +445,13 @@ export default function UploadPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Difficulty
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    লেভেল
                   </label>
                   <select
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="BEGINNER">Beginner (সহজ)</option>
                     <option value="INTERMEDIATE">Intermediate (মধ্যম)</option>
@@ -366,212 +460,81 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              {/* Summaries */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    English Summary (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={summaryEn}
-                    onChange={(e) => setSummaryEn(e.target.value)}
-                    placeholder="Short summary of the story..."
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Bengali Summary (বাংলা সারাংশ)
-                  </label>
-                  <input
-                    type="text"
-                    value={summaryBn}
-                    onChange={(e) => setSummaryBn(e.target.value)}
-                    placeholder="গল্পের সংক্ষিপ্ত সারমর্ম..."
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-900 border border-slate-800 font-bengali text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* English Passage Content */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  English Reading Passage *
-                </label>
-                <p className="text-[11px] text-slate-400 mb-1.5">
-                  Write the article or story in clear English paragraphs.
-                </p>
-                <textarea
-                  required
-                  rows={6}
-                  value={englishContent}
-                  onChange={(e) => setEnglishContent(e.target.value)}
-                  placeholder="Enter English story or article..."
-                  className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-sm text-slate-100 leading-relaxed placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              {/* Bengali Translation Content */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Bengali Translation (বাংলা অনুবাদ) *
-                </label>
-                <p className="text-[11px] text-slate-400 mb-1.5">
-                  Provide corresponding Bengali paragraphs matching the English
-                  paragraphs above.
-                </p>
-                <textarea
-                  required
-                  rows={6}
-                  value={bengaliContent}
-                  onChange={(e) => setBengaliContent(e.target.value)}
-                  placeholder="গল্পের সম্পূর্ণ বাংলা অনুবাদ লিখুন..."
-                  className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-800 font-bengali text-sm text-slate-100 leading-relaxed placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              {/* Key Vocabulary Manager */}
-              <div className="pt-2 border-t border-slate-800">
+              {/* Sections (Phrases with English + Bangla Pronunciation + Bengali Meaning) */}
+              <div className="pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-200">
-                      Key Vocabulary Words
+                    <h3 className="text-sm font-bold text-slate-900">
+                      প্যাসেজের বাক্যসমূহ (Phrases & Sentences)
                     </h3>
-                    <p className="text-[11px] text-slate-400">
-                      Words will be highlighted in the reader with bottom-sheet
-                      meanings.
+                    <p className="text-[11px] text-slate-500">
+                      প্রতিটি বাক্যের ইংরেজি, বাংলা উচ্চারণ ও বাংলা অর্থ দিন
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={handleAddVocabRow}
-                    className="min-h-[44px] px-3 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1 hover:bg-indigo-600/30 active:scale-95"
+                    onClick={handleAddSection}
+                    className="min-h-[40px] px-3 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold flex items-center gap-1 active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
-                    Add Word
+                    বাক্য যোগ করুন
                   </button>
                 </div>
 
                 <div className="space-y-4">
-                  {vocabularies.map((vocab, index) => (
+                  {sections.map((sec, idx) => (
                     <div
-                      key={index}
-                      className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 relative"
+                      key={idx}
+                      className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2.5 shadow-2xs relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-400">
-                          Word #{index + 1}
+                        <span className="text-xs font-bold text-indigo-600 font-mono">
+                          বাক্য #{idx + 1}
                         </span>
-                        {vocabularies.length > 1 && (
+                        {sections.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => handleRemoveVocabRow(index)}
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-rose-400 active:scale-95"
+                            onClick={() => handleRemoveSection(idx)}
+                            className="text-slate-400 hover:text-rose-500"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="English word *"
-                          value={vocab.word}
-                          onChange={(e) =>
-                            handleVocabChange(index, "word", e.target.value)
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
-                        />
-                        <input
-                          type="text"
-                          placeholder="বাংলা অর্থ *"
-                          value={vocab.bengaliMeaning}
-                          onChange={(e) =>
-                            handleVocabChange(
-                              index,
-                              "bengaliMeaning",
-                              e.target.value
-                            )
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 font-bengali text-xs text-slate-100"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="Phonetic (e.g. /ˈeɪn.ʃənt/)"
-                          value={vocab.phonetic}
-                          onChange={(e) =>
-                            handleVocabChange(index, "phonetic", e.target.value)
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
-                        />
-                        <select
-                          value={vocab.partOfSpeech}
-                          onChange={(e) =>
-                            handleVocabChange(
-                              index,
-                              "partOfSpeech",
-                              e.target.value
-                            )
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
-                        >
-                          <option value="noun">noun (বিশেষ্য)</option>
-                          <option value="verb">verb (ক্রিয়া)</option>
-                          <option value="adjective">adjective (বিশেষণ)</option>
-                          <option value="adverb">adverb (ক্রিয়া বিশেষণ)</option>
-                          <option value="idiom">idiom (বাগধারা)</option>
-                          <option value="phrase">phrase (শব্দগুচ্ছ)</option>
-                        </select>
-                      </div>
+                      <input
+                        type="text"
+                        placeholder="English sentence *"
+                        value={sec.englishText}
+                        onChange={(e) =>
+                          handleSectionChange(idx, "englishText", e.target.value)
+                        }
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                      />
 
                       <input
                         type="text"
-                        placeholder="English definition (optional)"
-                        value={vocab.englishDefinition}
+                        placeholder="বাংলা উচ্চারণ (যেমন: ওয়ান্স আপন আ টাইম...)"
+                        value={sec.banglaPronunciation}
                         onChange={(e) =>
-                          handleVocabChange(
-                            index,
-                            "englishDefinition",
+                          handleSectionChange(
+                            idx,
+                            "banglaPronunciation",
                             e.target.value
                           )
                         }
-                        className="w-full min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-violet-50/50 border border-violet-200 font-bengali text-xs text-violet-950"
                       />
 
-                      <div className="grid grid-cols-1 gap-2">
-                        <input
-                          type="text"
-                          placeholder="Context sentence (English)"
-                          value={vocab.exampleSentenceEn}
-                          onChange={(e) =>
-                            handleVocabChange(
-                              index,
-                              "exampleSentenceEn",
-                              e.target.value
-                            )
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Context sentence (বাংলা অনুবাদ)"
-                          value={vocab.exampleSentenceBn}
-                          onChange={(e) =>
-                            handleVocabChange(
-                              index,
-                              "exampleSentenceBn",
-                              e.target.value
-                            )
-                          }
-                          className="min-h-[44px] px-3 rounded-xl bg-slate-950 border border-slate-800 font-bengali text-xs text-slate-100"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        placeholder="সম্পূর্ণ বাংলা অনুবাদ *"
+                        value={sec.bengaliText}
+                        onChange={(e) =>
+                          handleSectionChange(idx, "bengaliText", e.target.value)
+                        }
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 font-bengali text-xs text-emerald-950"
+                      />
                     </div>
                   ))}
                 </div>
@@ -579,18 +542,18 @@ export default function UploadPage() {
             </>
           )}
 
-          {/* Submit Button (48px touch target) */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full min-h-[48px] rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-98 transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50"
+            className="w-full min-h-[48px] rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-98 transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50"
           >
             {isSubmitting ? (
-              <span>Saving to Neon Postgres...</span>
+              <span>ডাটাবেজে সংরক্ষণ করা হচ্ছে...</span>
             ) : (
               <>
                 <Upload className="w-5 h-5" />
-                <span>Upload & Publish Passage</span>
+                <span>প্যাসেজ সেভ করুন (Save to Neon DB)</span>
               </>
             )}
           </button>

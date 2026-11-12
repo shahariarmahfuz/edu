@@ -1,6 +1,6 @@
 export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
-export type ThemeMode = "light" | "sepia" | "dark";
+export type ThemeMode = "light"; // Fixed to clean light mode as requested
 
 export type FontSize = "sm" | "md" | "lg" | "xl";
 
@@ -10,9 +10,11 @@ export interface VocabularyItem {
   id: string;
   passageId?: string | null;
   word: string;
+  cleanWord?: string | null;
   phonetic?: string | null;
+  banglaPronunciation?: string | null; // বাংলা উচ্চারণ (যেমন: অ্যানশেন্ট)
   partOfSpeech?: string | null;
-  bengaliMeaning: string;
+  bengaliMeaning: string;             // বাংলা অর্থ (যেমন: প্রাচীন)
   englishDefinition?: string | null;
   exampleSentenceEn?: string | null;
   exampleSentenceBn?: string | null;
@@ -23,7 +25,8 @@ export interface PassageSectionItem {
   passageId: string;
   orderIndex: number;
   englishText: string;
-  bengaliText: string;
+  banglaPronunciation?: string | null; // বাক্যের বাংলা উচ্চারণ (যেমন: ওয়ান্স আপন আ টাইম...)
+  bengaliText: string;                 // বাক্যের সম্পূর্ণ বাংলা অনুবাদ
 }
 
 export interface PassageItem {

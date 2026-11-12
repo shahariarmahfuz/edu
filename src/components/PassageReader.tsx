@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   PassageItem,
   VocabularyItem,
   PassageSectionItem,
-  ThemeMode,
   FontSize,
   ReadingMode,
 } from "@/types/reading";
 import ReaderHeader from "./ReaderHeader";
 import VocabularyBottomSheet from "./VocabularyBottomSheet";
+import { lookupWord, sanitizeWord } from "@/lib/dictionary";
 import {
   Sparkles,
   BookMarked,
   Languages,
   CheckCircle2,
   Volume2,
-  RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 
 interface PassageReaderProps {
@@ -25,43 +25,33 @@ interface PassageReaderProps {
 }
 
 export default function PassageReader({ passage }: PassageReaderProps) {
-  // Theme & Reading Ergonomics State (persisted in localStorage if available)
-  const [theme, setTheme] = useState<ThemeMode>("sepia");
+  // Reading Ergonomics State (Light Mode Only)
   const [fontSize, setFontSize] = useState<FontSize>("md");
   const [readingMode, setReadingMode] = useState<ReadingMode>("tap-to-reveal");
+  const [showBanglaPronunciation, setShowBanglaPronunciation] = useState<boolean>(true);
 
-  // Interactive sentence reveal state: Set of section IDs that are revealed
+  // Set of section IDs that are revealed
   const [revealedSectionIds, setRevealedSectionIds] = useState<Set<string>>(
     new Set()
   );
 
-  // Vocabulary Bottom Sheet Modal State
+  // Active word lookup for bottom sheet modal
   const [activeVocab, setActiveVocab] = useState<VocabularyItem | null>(null);
   const [showGlossaryDrawer, setShowGlossaryDrawer] = useState(false);
-
-  // Scroll Progress Tracking
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Read preferences from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("bhasha_theme") as ThemeMode | null;
       const savedFontSize = localStorage.getItem("bhasha_fontsize") as FontSize | null;
       const savedMode = localStorage.getItem("bhasha_mode") as ReadingMode | null;
+      const savedPronounce = localStorage.getItem("bhasha_show_pronounce");
 
-      if (savedTheme) setTheme(savedTheme);
       if (savedFontSize) setFontSize(savedFontSize);
       if (savedMode) setReadingMode(savedMode);
+      if (savedPronounce !== null) setShowBanglaPronunciation(savedPronounce === "true");
     }
   }, []);
-
-  // Save changes to localStorage
-  const handleThemeChange = (newTheme: ThemeMode) => {
-    setTheme(newTheme);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("bhasha_theme", newTheme);
-    }
-  };
 
   const handleFontSizeChange = (newSize: FontSize) => {
     setFontSize(newSize);
@@ -75,6 +65,16 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     if (typeof window !== "undefined") {
       localStorage.setItem("bhasha_mode", newMode);
     }
+  };
+
+  const handleToggleBanglaPronunciation = () => {
+    setShowBanglaPronunciation((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("bhasha_show_pronounce", String(next));
+      }
+      return next;
+    });
   };
 
   // Scroll Progress listener
@@ -118,176 +118,159 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     }
   };
 
-  // Map of vocabulary word lowercased -> VocabularyItem
-  const vocabMap = useMemo(() => {
-    const map = new Map<string, VocabularyItem>();
-    (passage.vocabularies || []).forEach((v) => {
-      map.set(v.word.toLowerCase().trim(), v);
-    });
-    return map;
-  }, [passage.vocabularies]);
-
-  // Regex pattern to match vocabulary words with word boundary
-  const vocabRegex = useMemo(() => {
-    if (vocabMap.size === 0) return null;
-    const escapedWords = Array.from(vocabMap.keys())
-      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .sort((a, b) => b.length - a.length); // longest matches first
-    return new RegExp(`\\b(${escapedWords.join("|")})\\b`, "gi");
-  }, [vocabMap]);
-
-  // Helper to render text with interactive vocabulary pills
-  const renderInteractiveEnglishText = (text: string) => {
-    if (!vocabRegex) {
-      return text;
+  // Pronounce an entire sentence
+  const playSentenceAudio = (sentence: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.lang = "en-US";
+      utterance.rate = 0.88;
+      window.speechSynthesis.speak(utterance);
     }
-
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    // Reset regex index
-    vocabRegex.lastIndex = 0;
-
-    while ((match = vocabRegex.exec(text)) !== null) {
-      const matchIndex = match.index;
-      const matchedWord = match[0];
-
-      // Push text before the match
-      if (matchIndex > lastIndex) {
-        parts.push(text.slice(lastIndex, matchIndex));
-      }
-
-      const vocabItem = vocabMap.get(matchedWord.toLowerCase());
-
-      // Push interactive clickable vocabulary badge
-      parts.push(
-        <button
-          key={`${matchIndex}-${matchedWord}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (vocabItem) setActiveVocab(vocabItem);
-          }}
-          className="inline-flex items-baseline px-1.5 py-0.5 mx-0.5 rounded-md font-medium transition-all active:scale-95 cursor-pointer border shadow-2xs hover:underline decoration-indigo-400 decoration-2"
-          style={{
-            backgroundColor: "var(--highlight-vocab)",
-            color: "var(--highlight-vocab-text)",
-            borderColor: "var(--highlight-vocab-border)",
-          }}
-          title={`Bengali: ${vocabItem?.bengaliMeaning || "Click for meaning"}`}
-          aria-label={`Vocabulary word: ${matchedWord}`}
-        >
-          {matchedWord}
-          <span className="text-[10px] ml-0.5 opacity-70">✦</span>
-        </button>
-      );
-
-      lastIndex = vocabRegex.lastIndex;
-    }
-
-    // Push remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts;
   };
 
-  // Font size mapping classes
+  // Handle clicking ANY individual word
+  const handleWordClick = (rawWord: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const vocabData = lookupWord(rawWord, passage.vocabularies);
+    setActiveVocab(vocabData);
+  };
+
+  // Set of passage-specific vocabulary clean words for highlighting
+  const highlightedWordsSet = new Set(
+    (passage.vocabularies || []).map((v) => sanitizeWord(v.word))
+  );
+
+  // Render English sentence where EVERY SINGLE WORD is clickable
+  const renderEveryWordClickable = (text: string) => {
+    // Split by whitespace while preserving punctuation
+    const tokens = text.split(/(\s+)/);
+
+    return tokens.map((token, idx) => {
+      // If whitespace, return plain span
+      if (/^\s+$/.test(token)) {
+        return <span key={idx}>{token}</span>;
+      }
+
+      const clean = sanitizeWord(token);
+      if (!clean) {
+        return <span key={idx}>{token}</span>;
+      }
+
+      // Check if this word is a key vocabulary word from the passage
+      const isHighlighted = highlightedWordsSet.has(clean);
+
+      return (
+        <span
+          key={idx}
+          onClick={(e) => handleWordClick(token, e)}
+          className={`clickable-word ${
+            isHighlighted
+              ? "is-highlighted px-1.5 py-0.5 rounded-md shadow-2xs font-semibold"
+              : "hover:bg-indigo-100/70"
+          }`}
+          title={`Click to see meaning & pronunciation of "${clean}"`}
+        >
+          {token}
+          {isHighlighted && <span className="text-[10px] ml-0.5 opacity-80">✦</span>}
+        </span>
+      );
+    });
+  };
+
+  // Font size styling for English sentence
   const fontSizeStyle = {
-    sm: "text-[15px] leading-[1.65]",
-    md: "text-[17px] leading-[1.75]",
-    lg: "text-[19px] leading-[1.8]",
-    xl: "text-[21px] leading-[1.85]",
+    sm: "text-[16px] leading-[1.7]",
+    md: "text-[18px] leading-[1.75]",
+    lg: "text-[20px] leading-[1.8]",
+    xl: "text-[22px] leading-[1.85]",
   }[fontSize];
 
   return (
-    <div
-      className={`min-h-screen theme-${theme} transition-colors duration-300 pb-28 tap-highlight-transparent`}
-      style={{
-        backgroundColor: "var(--bg-primary)",
-        color: "var(--text-primary)",
-      }}
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 tap-highlight-transparent font-sans">
       {/* Sticky Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-black/10 dark:bg-white/10">
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-200">
         <div
           className="h-full bg-indigo-600 transition-all duration-150"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
-      {/* Reader Navigation Header */}
+      {/* Reader Navigation Header (Clean Light Mode) */}
       <ReaderHeader
         titleEn={passage.titleEn}
         difficulty={passage.difficulty}
         readingTimeMinutes={passage.readingTimeMinutes}
-        theme={theme}
         fontSize={fontSize}
         readingMode={readingMode}
-        onThemeChange={handleThemeChange}
+        showBanglaPronunciation={showBanglaPronunciation}
         onFontSizeChange={handleFontSizeChange}
         onReadingModeChange={handleReadingModeChange}
+        onToggleBanglaPronunciation={handleToggleBanglaPronunciation}
         onOpenGlossary={() => setShowGlossaryDrawer(true)}
         vocabCount={passage.vocabularies?.length || 0}
       />
 
-      {/* Mobile-first centered reading container (360px - 430px on mobile, centered max-w-lg on desktop) */}
-      <main className="max-w-md mx-auto px-4 pt-6 pb-12">
-        {/* Article Title Header */}
-        <div className="mb-6 pb-4 border-b border-black/10 dark:border-white/10">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+      {/* Centered Mobile Container */}
+      <main className="max-w-md mx-auto px-4 pt-5 pb-12">
+        {/* Article Title & Info Header */}
+        <div className="mb-6 pb-4 border-b border-slate-200 bg-white p-5 rounded-3xl shadow-xs border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
               {passage.category}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">
+              {passage.readingTimeMinutes} min read
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight mb-1.5 leading-snug">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-1 leading-snug">
             {passage.titleEn}
           </h1>
 
-          <h2 className="font-bengali text-lg font-medium opacity-80 leading-normal">
+          <h2 className="font-bengali text-lg font-bold text-slate-700 leading-normal">
             {passage.titleBn}
           </h2>
 
           {passage.summaryEn && (
-            <p className="mt-3 text-xs leading-relaxed opacity-75 italic">
+            <p className="mt-2.5 text-xs leading-relaxed text-slate-600 italic">
               {passage.summaryEn}
             </p>
           )}
+
+          {/* Quick Tip Banner */}
+          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 font-medium">
+              💡 <strong className="text-slate-800">যেকোনো শব্দে</strong> ট্যাপ করে উচ্চারণ ও অর্থ দেখুন
+            </span>
+          </div>
         </div>
 
-        {/* Reading Ergonomics & Quick Instructions Bar */}
-        <div
-          className="mb-6 p-3 rounded-2xl border flex items-center justify-between text-xs"
-          style={{
-            backgroundColor: "var(--bg-surface)",
-            borderColor: "var(--border-color)",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <Languages className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-medium opacity-85">
-              {readingMode === "tap-to-reveal" &&
-                "Tap any sentence to reveal Bengali meaning"}
-              {readingMode === "parallel" && "Dual parallel English & Bengali"}
-              {readingMode === "english-only" && "Immersion English mode"}
+        {/* Reading Controls Bar */}
+        <div className="mb-5 p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-slate-700">
+            <Languages className="w-4 h-4 text-indigo-600" />
+            <span className="font-semibold text-[11px]">
+              {readingMode === "tap-to-reveal"
+                ? "বাক্যে ট্যাপ করে বাংলা অর্থ দেখুন"
+                : "সমান্তরাল বাংলা অনুবাদ সক্রিয়"}
             </span>
           </div>
 
           {readingMode === "tap-to-reveal" && (
             <button
               onClick={handleRevealAll}
-              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline active:scale-95"
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 active:scale-95"
             >
               {revealedSectionIds.size === passage.sections.length
-                ? "Hide All"
-                : "Reveal All"}
+                ? "সব লুকান"
+                : "সব দেখুন"}
             </button>
           )}
         </div>
 
-        {/* Main Bilingual Passage Body */}
+        {/* Main Bilingual Passage Body (Phrase by Phrase with 3 Layers) */}
         <div className="space-y-4">
           {passage.sections && passage.sections.length > 0 ? (
             passage.sections.map((section: PassageSectionItem, index: number) => {
@@ -298,133 +281,127 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                 <article
                   key={section.id}
                   onClick={() => toggleSectionReveal(section.id)}
-                  className={`group relative p-3.5 rounded-2xl border transition-all duration-200 ${
+                  className={`relative p-4 rounded-3xl bg-white border border-slate-200 shadow-xs transition-all duration-200 ${
                     readingMode === "tap-to-reveal"
-                      ? "cursor-pointer hover:border-indigo-400/50 active:scale-[0.99]"
+                      ? "cursor-pointer hover:border-indigo-300 active:scale-[0.995]"
                       : ""
                   }`}
-                  style={{
-                    backgroundColor: isRevealed
-                      ? "var(--bg-secondary)"
-                      : "transparent",
-                    borderColor: isRevealed
-                      ? "var(--border-color)"
-                      : "transparent",
-                  }}
                 >
-                  {/* Sentence Number Badge */}
-                  <div className="absolute top-2 right-2 text-[10px] font-mono opacity-30 select-none">
-                    #{index + 1}
+                  {/* Sentence Number & Audio Button */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 font-mono">
+                      #{index + 1}
+                    </span>
+
+                    <button
+                      onClick={(e) => playSentenceAudio(section.englishText, e)}
+                      className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 active:scale-95 transition-all"
+                      title="Listen to full sentence pronunciation"
+                      aria-label="Play sentence"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  {/* English Text with Interactive Vocabulary Pills */}
-                  <p
-                    className={`font-english ${fontSizeStyle} tracking-normal text-slate-900 dark:text-slate-100 pr-5`}
+                  {/* LAYER 1: English Phrase with Every Word Clickable */}
+                  <div
+                    className={`font-english ${fontSizeStyle} font-medium tracking-normal text-slate-900`}
                   >
-                    {renderInteractiveEnglishText(section.englishText)}
-                  </p>
+                    {renderEveryWordClickable(section.englishText)}
+                  </div>
 
-                  {/* Bengali Translation Section */}
-                  {isRevealed && section.bengaliText && (
-                    <div className="mt-3 pt-2.5 border-t border-black/10 dark:border-white/10 animate-fadeIn">
-                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1 select-none">
-                        <span>বাংলা অনুবাদ</span>
+                  {/* LAYER 2: বাংলা উচ্চারণ (Bengali Pronunciation / Transliteration) */}
+                  {showBanglaPronunciation && section.banglaPronunciation && (
+                    <div className="mt-3 p-3 rounded-2xl bg-violet-50/80 border border-violet-100">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-0.5 flex items-center gap-1">
+                        <span>বাংলা উচ্চারণ</span>
                       </div>
-                      <p className="font-bengali text-[16px] leading-[1.7] opacity-90 text-slate-800 dark:text-slate-200">
+                      <p className="font-bengali text-[15px] font-semibold text-violet-950 leading-relaxed">
+                        {section.banglaPronunciation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* LAYER 3: বাংলা অনুবাদ (Bengali Meaning / Translation) */}
+                  {isRevealed && section.bengaliText && (
+                    <div className="mt-3 p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-100 animate-fadeIn">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-0.5">
+                        বাংলা অনুবাদ (Meaning)
+                      </div>
+                      <p className="font-bengali text-[16px] font-medium text-slate-900 leading-relaxed">
                         {section.bengaliText}
                       </p>
                     </div>
                   )}
 
-                  {/* Subtle prompt indicator for tap-to-reveal mode */}
+                  {/* Tap prompt if unrevealed */}
                   {readingMode === "tap-to-reveal" && !isRevealed && (
-                    <div className="mt-1 flex items-center gap-1 text-[11px] opacity-40 select-none group-hover:opacity-75 transition-opacity">
-                      <span>Tap to reveal translation</span>
-                      <span>↓</span>
+                    <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-indigo-600/70 select-none">
+                      <span>বাংলা অর্থ দেখতে স্পর্শ করুন</span>
+                      <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                   )}
                 </article>
               );
             })
           ) : (
-            // Fallback if sections were not populated
-            <div className={`font-english ${fontSizeStyle} space-y-4`}>
-              <p>{passage.englishContent}</p>
-              <div className="mt-6 p-4 rounded-2xl border bg-black/5 dark:bg-white/5">
-                <h3 className="font-bengali text-lg font-bold mb-2">
-                  সম্পূর্ণ বাংলা অনুবাদ:
-                </h3>
-                <p className="font-bengali text-base leading-relaxed opacity-90">
-                  {passage.bengaliContent}
-                </p>
-              </div>
+            <div className="p-4 bg-white rounded-3xl border border-slate-200">
+              <p className="text-slate-900 font-english">{passage.englishContent}</p>
             </div>
           )}
         </div>
 
-        {/* Completion Card at the end of article */}
-        <div
-          className="mt-10 p-5 rounded-3xl border text-center space-y-3"
-          style={{
-            backgroundColor: "var(--bg-secondary)",
-            borderColor: "var(--border-color)",
-          }}
-        >
-          <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+        {/* Completion Card */}
+        <div className="mt-10 p-6 rounded-3xl bg-white border border-slate-200 shadow-sm text-center space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold">Great Job Reading!</h3>
-          <p className="text-xs opacity-75 max-w-xs mx-auto">
-            You completed this article. Review the {passage.vocabularies?.length || 0} key vocabulary words below to reinforce your memory.
+          <h3 className="text-lg font-bold text-slate-900">
+            চমৎকার! আপনি গল্পটি সম্পন্ন করেছেন 🎉
+          </h3>
+          <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+            প্যাসেজটির প্রতিটি শব্দ এবং অর্থ পুনরায় পর্যালোচনা করতে নিচের বোতামে চাপ দিন।
           </p>
 
           <button
             onClick={() => setShowGlossaryDrawer(true)}
-            className="min-h-[44px] px-4 py-2 rounded-2xl bg-indigo-600 text-white font-medium text-xs flex items-center justify-center gap-2 mx-auto active:scale-95 shadow-md shadow-indigo-600/20"
+            className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 mx-auto active:scale-95 shadow-md shadow-indigo-600/20"
           >
             <Sparkles className="w-4 h-4" />
-            Review Key Vocabulary ({passage.vocabularies?.length || 0})
+            গুরুত্বপূর্ণ শব্দার্থ দেখুন ({passage.vocabularies?.length || 0})
           </button>
         </div>
       </main>
 
-      {/* Persistent Bottom Floating Action Bar (Thumb Zone) */}
+      {/* Persistent Bottom Floating Action Bar */}
       <div className="fixed bottom-4 left-0 right-0 z-30 pointer-events-none">
         <div className="max-w-md mx-auto px-4 flex items-center justify-between pointer-events-auto">
-          {/* Quick Translation Toggle Button */}
           <button
             onClick={handleRevealAll}
-            className="min-h-[48px] px-4 rounded-2xl backdrop-blur-md border shadow-lg flex items-center gap-2 text-xs font-semibold active:scale-95 transition-transform"
-            style={{
-              backgroundColor: "var(--bg-secondary)",
-              borderColor: "var(--border-color)",
-              color: "var(--text-primary)",
-            }}
+            className="min-h-[48px] px-4 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg flex items-center gap-2 text-xs font-bold text-slate-800 active:scale-95 transition-transform"
           >
-            <Languages className="w-4 h-4 text-indigo-500" />
+            <Languages className="w-4 h-4 text-indigo-600" />
             <span>
-              {revealedSectionIds.size > 0 ? "Hide Translations" : "Show All Bangla"}
+              {revealedSectionIds.size > 0 ? "অনুবাদ লুকান" : "সব অনুবাদ দেখুন"}
             </span>
           </button>
 
-          {/* Key Vocabulary Drawer Trigger Button */}
           {passage.vocabularies && passage.vocabularies.length > 0 && (
             <button
               onClick={() => setShowGlossaryDrawer(true)}
-              className="min-h-[48px] px-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 flex items-center gap-2 text-xs font-semibold active:scale-95 transition-transform"
+              className="min-h-[48px] px-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 flex items-center gap-2 text-xs font-bold active:scale-95 transition-transform"
             >
               <BookMarked className="w-4 h-4" />
-              <span>Vocab ({passage.vocabularies.length})</span>
+              <span>শব্দকোষ ({passage.vocabularies.length})</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Interactive Bottom Sheet for single vocabulary word tapped in passage */}
+      {/* Interactive Bottom Sheet for Clicked Word */}
       <VocabularyBottomSheet
         vocab={activeVocab}
         vocabList={passage.vocabularies}
-        theme={theme}
         onClose={() => setActiveVocab(null)}
         onSelectVocab={(v) => setActiveVocab(v)}
       />
@@ -433,29 +410,24 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       {showGlossaryDrawer && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
             onClick={() => setShowGlossaryDrawer(false)}
           />
-          <div
-            className="relative z-10 w-full max-w-md mx-auto max-h-[85vh] flex flex-col rounded-t-3xl border-t shadow-2xl p-5 animate-slide-up"
-            style={{
-              backgroundColor: "var(--bg-secondary)",
-              borderColor: "var(--border-color)",
-              color: "var(--text-primary)",
-            }}
-          >
-            <div className="w-12 h-1.5 bg-slate-400/40 rounded-full mx-auto mb-3" />
+          <div className="relative z-10 w-full max-w-md mx-auto max-h-[85vh] flex flex-col rounded-t-3xl bg-white border-t border-slate-200 shadow-2xl p-5 animate-slide-up text-slate-900">
+            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3" />
 
-            <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="font-bold text-lg">Article Vocabulary</h3>
-                <p className="text-xs opacity-60">
-                  {passage.vocabularies?.length || 0} important words to master
+                <h3 className="font-bold text-lg text-slate-900">
+                  প্যাসেজের শব্দকোষ (Vocabulary)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {passage.vocabularies?.length || 0} টি গুরুত্বপূর্ণ শব্দার্থ
                 </p>
               </div>
               <button
                 onClick={() => setShowGlossaryDrawer(false)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-700"
               >
                 ✕
               </button>
@@ -469,30 +441,31 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                     setShowGlossaryDrawer(false);
                     setActiveVocab(v);
                   }}
-                  className="p-3 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-500 transition-all active:scale-[0.99]"
-                  style={{
-                    backgroundColor: "var(--bg-surface)",
-                    borderColor: "var(--border-color)",
-                  }}
+                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all active:scale-[0.99]"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-base capitalize truncate">
+                      <span className="font-bold text-base text-slate-900 capitalize truncate">
                         {v.word}
                       </span>
+                      {v.banglaPronunciation && (
+                        <span className="font-bengali text-xs font-semibold text-violet-700">
+                          ({v.banglaPronunciation})
+                        </span>
+                      )}
                       {v.partOfSpeech && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-indigo-500/10 text-indigo-500 font-medium">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-indigo-100 text-indigo-700 font-semibold">
                           {v.partOfSpeech}
                         </span>
                       )}
                     </div>
-                    <div className="font-bengali text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">
+                    <div className="font-bengali text-sm font-bold text-slate-800 mt-0.5">
                       {v.bengaliMeaning}
                     </div>
                   </div>
 
-                  <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                    Details →
+                  <div className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                    বিস্তারিত →
                   </div>
                 </div>
               ))}
