@@ -335,8 +335,8 @@ export default function PassageReader({ passage }: PassageReaderProps) {
           </div>
         </header>
 
-        {/* Clean Article Body — Uninterrupted English Prose */}
-        <div className="space-y-7">
+        {/* Clean Article Body — Uninterrupted Editorial Prose */}
+        <div className="space-y-8">
           {passage.sections && passage.sections.length > 0 ? (
             passage.sections.map((section: PassageSectionItem) => {
               const isRevealed =
@@ -362,13 +362,11 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                     </p>
                   )}
 
-                  {/* Clean Revealed Bengali Translation Card */}
+                  {/* Normal Plain-Text Bengali Translation (no box/border) */}
                   {isRevealed && section.bengaliText && (
-                    <div className="mt-2.5 p-3.5 rounded-2xl bg-[#f8f9fa] border border-[#e8eaed]">
-                      <p className="font-bengali text-[15.5px] text-[#3c4043] leading-[1.72]">
-                        {section.bengaliText}
-                      </p>
-                    </div>
+                    <p className="font-bengali text-[16px] text-[#202124] leading-[1.75] mt-3">
+                      {section.bengaliText}
+                    </p>
                   )}
                 </article>
               );
