@@ -239,55 +239,7 @@ export default function HomeFeed({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-5 pb-10 space-y-5">
-        {/* Stylish Compact Overview & Quick Actions Card */}
-        <section className="p-5 rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-700 text-white shadow-md shadow-indigo-600/15 relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-100/90">
-                Daily English Practice
-              </span>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/15 text-white">
-                {passages.length} Stories · {totalVocabCount}+ Words
-              </span>
-            </div>
-
-            <h1 className="font-bengali text-xl font-bold mt-2 leading-snug">
-              গল্প পড়ে ইংরেজি শিখুন, প্রতিটি শব্দের উচ্চারণ ও বাংলা অর্থসহ
-            </h1>
-
-            {/* Useful Quick-Action Buttons */}
-            <div className="mt-4 flex items-center gap-2">
-              {featuredPassage && (
-                <Link
-                  href={`/read/${featuredPassage.slug}`}
-                  className="min-h-[42px] px-4 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span className="font-bengali">পড়া শুরু করুন</span>
-                </Link>
-              )}
-
-              <Link
-                href="/vocabulary"
-                className="min-h-[42px] px-3.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs flex items-center gap-1.5 backdrop-blur-xs active:scale-95 transition-all"
-              >
-                <BookA className="w-3.5 h-3.5" />
-                <span className="font-bengali">শব্দকোষ</span>
-              </Link>
-
-              <Link
-                href="/upload"
-                className="min-h-[42px] px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs flex items-center gap-1 active:scale-95 transition-all ml-auto"
-                title="Add new story"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add</span>
-              </Link>
-            </div>
-          </div>
-        </section>
-
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-5 pb-10 space-y-4">
         {/* Interactive Level Filter Bar */}
         <section>
           <div className="flex items-center justify-between mb-2.5 px-0.5">
