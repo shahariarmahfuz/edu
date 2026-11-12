@@ -228,22 +228,27 @@ export default function VocabularyBottomSheet({
                 )}
               </div>
 
-              {/* Instant Full-Sentence Meaning Preview (Zero clutter needed inside the article!) */}
+              {/* Instant Full-Sentence Meaning & Pronunciation Preview */}
               {sentenceContext && (
                 <div className="p-3.5 rounded-2xl bg-[#f8f9fa] border border-[#e8eaed] space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-medium text-[#5f6368] font-bengali">
-                      এই বাক্যের পূর্ণ অর্থ
+                      পুরো বাক্যের উচ্চারণ ও অর্থ
                     </span>
                     <button
                       type="button"
                       onClick={() => setActiveTab("sentence")}
                       className="inline-flex items-center gap-0.5 text-[11.5px] font-medium text-[#1a73e8] hover:underline font-bengali cursor-pointer"
                     >
-                      উচ্চারণ ও অডিও
+                      বিস্তারিত ও অডিও
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                  {sentenceContext.bnPronounce && (
+                    <p className="font-bengali text-[13px] text-[#5f6368] leading-[1.6]">
+                      {sentenceContext.bnPronounce}
+                    </p>
+                  )}
                   <p className="font-bengali text-[14.5px] text-[#202124] leading-[1.65]">
                     {sentenceContext.bn}
                   </p>

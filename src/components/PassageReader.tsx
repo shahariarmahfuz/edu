@@ -24,7 +24,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
   const [fontSize, setFontSize] = useState<FontSize>("md");
   const [readingMode, setReadingMode] = useState<ReadingMode>("tap-to-reveal");
   const [showBanglaPronunciation, setShowBanglaPronunciation] =
-    useState<boolean>(false);
+    useState<boolean>(true);
 
   const [revealedSectionIds, setRevealedSectionIds] = useState<Set<string>>(
     new Set()
@@ -52,7 +52,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       const savedMode = localStorage.getItem(
         "bhasha_mode_v2"
       ) as ReadingMode | null;
-      const savedPronounce = localStorage.getItem("bhasha_show_pronounce_v2");
+      const savedPronounce = localStorage.getItem("bhasha_show_pronounce_v3");
 
       if (savedFontSize) setFontSize(savedFontSize);
       if (savedMode) setReadingMode(savedMode);
@@ -88,7 +88,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     setShowBanglaPronunciation((prev) => {
       const next = !prev;
       if (typeof window !== "undefined") {
-        localStorage.setItem("bhasha_show_pronounce_v2", String(next));
+        localStorage.setItem("bhasha_show_pronounce_v3", String(next));
       }
       return next;
     });
@@ -140,17 +140,6 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       setRevealedSectionIds(new Set());
     } else {
       setRevealedSectionIds(new Set(passage.sections.map((s) => s.id)));
-    }
-  };
-
-  const playSentenceAudio = (sentence: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(sentence);
-      utterance.lang = "en-US";
-      utterance.rate = 0.88;
-      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -298,29 +287,41 @@ export default function PassageReader({ passage }: PassageReaderProps) {
           </h2>
 
           {/* Meta + Clean Controls Row */}
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <span className="text-[13.5px] text-[#5f6368]">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[13px] text-[#5f6368]">
               {passage.readingTimeMinutes} min read
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleToggleBanglaPronunciation}
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center transition-colors active:scale-95 font-bengali ${
+                  showBanglaPronunciation
+                    ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
+                    : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
+                }`}
+              >
+                <span>উচ্চারণ</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleRevealAll}
-                className={`min-h-[34px] px-3 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-colors active:scale-95 font-bengali ${
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 transition-colors active:scale-95 font-bengali ${
                   allRevealed
                     ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
                     : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
                 }`}
               >
                 <Languages className="w-3.5 h-3.5" />
-                <span>{allRevealed ? "বাংলা লুকান" : "বাংলা অর্থ"}</span>
+                <span>{allRevealed ? "অনুবাদ লুকান" : "বাংলা অর্থ"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={toggleFullAudio}
-                className={`min-w-[34px] min-h-[34px] px-2.5 rounded-full border flex items-center justify-center transition-colors active:scale-95 ${
+                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center transition-colors active:scale-95 ${
                   isPlayingFull
                     ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
                     : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
@@ -328,19 +329,18 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                 aria-label={isPlayingFull ? "Stop reading" : "Listen to story"}
                 title={isPlayingFull ? "থামান" : "পুরো গল্প শুনুন"}
               >
-                <Volume2 className="w-4 h-4" />
+                <Volume2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </header>
 
         {/* Clean Article Body — Uninterrupted English Prose */}
-        <div className="space-y-6">
+        <div className="space-y-7">
           {passage.sections && passage.sections.length > 0 ? (
             passage.sections.map((section: PassageSectionItem) => {
               const isRevealed =
                 readingMode === "parallel" || revealedSectionIds.has(section.id);
-              const showPronounce = showBanglaPronunciation;
 
               return (
                 <article
@@ -355,49 +355,19 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                     {renderSectionSentences(section)}
                   </p>
 
-                  {/* Optional Inline Bengali Pronunciation (off by default for clean reading) */}
-                  {showPronounce && section.banglaPronunciation && !isRevealed && (
-                    <div className="mt-2.5 flex items-start justify-between gap-2 text-[#5f6368]">
-                      <p className="font-bengali text-[14px] leading-[1.65]">
-                        {section.banglaPronunciation}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={(e) => playSentenceAudio(section.englishText, e)}
-                        className="p-1 text-[#5f6368] hover:text-[#1a73e8] shrink-0"
-                        aria-label="Listen"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  {/* Clean Editorial Bengali Pronunciation right below English */}
+                  {showBanglaPronunciation && section.banglaPronunciation && (
+                    <p className="font-bengali text-[15px] text-[#5f6368] leading-[1.7] mt-2">
+                      {section.banglaPronunciation}
+                    </p>
                   )}
 
-                  {/* Clean Revealed Bengali Translation & Pronunciation Card */}
-                  {isRevealed && (section.bengaliText || section.banglaPronunciation) && (
-                    <div className="mt-3 p-3.5 rounded-2xl bg-[#f8f9fa] border border-[#e8eaed] space-y-2">
-                      {showPronounce && section.banglaPronunciation && (
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="font-bengali text-[13.5px] text-[#5f6368] leading-[1.65]">
-                            {section.banglaPronunciation}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={(e) =>
-                              playSentenceAudio(section.englishText, e)
-                            }
-                            className="p-1 text-[#5f6368] hover:text-[#1a73e8] shrink-0"
-                            aria-label="Listen"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-
-                      {section.bengaliText && (
-                        <p className="font-bengali text-[15.5px] text-[#3c4043] leading-[1.72]">
-                          {section.bengaliText}
-                        </p>
-                      )}
+                  {/* Clean Revealed Bengali Translation Card */}
+                  {isRevealed && section.bengaliText && (
+                    <div className="mt-2.5 p-3.5 rounded-2xl bg-[#f8f9fa] border border-[#e8eaed]">
+                      <p className="font-bengali text-[15.5px] text-[#3c4043] leading-[1.72]">
+                        {section.bengaliText}
+                      </p>
                     </div>
                   )}
                 </article>
