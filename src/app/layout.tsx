@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Hind_Siliguri } from "next/font/google";
+import { Plus_Jakarta_Sans, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-english",
   display: "swap",
 });
 
@@ -24,9 +25,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#4f46e5",
+  maximumScale: 5,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -37,9 +37,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${hindSiliguri.variable} antialiased h-full`}
+      className={`${plusJakartaSans.variable} ${hindSiliguri.variable} antialiased h-full`}
     >
-      <body className="min-h-full font-sans bg-white text-slate-900 selection:bg-slate-900 selection:text-white">
+      <body className="min-h-full font-english bg-white text-[#202124] selection:bg-[#d2e3fc] selection:text-[#174ea6]">
         {children}
       </body>
     </html>

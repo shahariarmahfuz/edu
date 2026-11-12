@@ -47,7 +47,7 @@ export default function VocabularyBottomSheet({
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < vocabList.length - 1;
 
-  const playAudio = (textToSpeak: string, rate = 0.85) => {
+  const playAudio = (textToSpeak: string, rate = 0.86) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -66,55 +66,57 @@ export default function VocabularyBottomSheet({
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-[#202124]/35 backdrop-blur-[1px] transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Clean Minimal Bottom Sheet */}
+      {/* Clean Google-Style Bottom Sheet */}
       <div
-        className="relative z-10 w-full max-w-md mx-auto rounded-t-3xl bg-white border-t border-slate-100 shadow-2xl px-6 pt-3 pb-7 animate-slide-up text-slate-900 max-h-[85vh] overflow-y-auto"
+        className="relative z-10 w-full max-w-lg mx-auto rounded-t-3xl bg-white border-t border-[#e8eaed] shadow-2xl px-6 pt-3 pb-7 animate-slide-up text-[#202124] max-h-[85vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
+        <div className="w-10 h-1 bg-[#dadce0] rounded-full mx-auto mb-4" />
 
         {/* Header Row */}
-        <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-[#e8eaed]">
           {showTabSwitcher ? (
-            <div className="flex-1 grid grid-cols-2 p-1 rounded-xl bg-slate-100">
+            <div className="flex-1 grid grid-cols-2 p-1 rounded-xl bg-[#f1f3f4]">
               <button
                 type="button"
                 onClick={() => setActiveTab("word")}
-                className={`min-h-[36px] rounded-lg text-xs font-semibold font-bengali transition-all ${
+                className={`min-h-[36px] rounded-lg text-xs font-medium font-bengali transition-all ${
                   activeTab === "word"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-[#202124] shadow-2xs"
+                    : "text-[#5f6368] hover:text-[#202124]"
                 }`}
               >
-                শব্দ (Word)
+                শব্দের অর্থ
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("sentence")}
-                className={`min-h-[36px] rounded-lg text-xs font-semibold font-bengali transition-all ${
+                className={`min-h-[36px] rounded-lg text-xs font-medium font-bengali transition-all ${
                   activeTab === "sentence"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-[#202124] shadow-2xs"
+                    : "text-[#5f6368] hover:text-[#202124]"
                 }`}
               >
-                পুরো বাক্য (Sentence)
+                পুরো বাক্য
               </button>
             </div>
           ) : (
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {activeTab === "sentence" ? "Sentence Meaning" : vocab?.partOfSpeech || "Word"}
+            <span className="text-xs font-medium text-[#5f6368] uppercase tracking-wider">
+              {activeTab === "sentence"
+                ? "Sentence Meaning"
+                : vocab?.partOfSpeech || "Word Meaning"}
             </span>
           )}
 
           <button
             onClick={onClose}
-            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 active:scale-95 transition-transform"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] text-[#5f6368] active:scale-95 transition-transform"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -125,15 +127,15 @@ export default function VocabularyBottomSheet({
         {activeTab === "sentence" && sentenceContext ? (
           <div className="mt-5 space-y-4">
             <div className="flex items-start justify-between gap-3">
-              <p className="font-english text-[17px] font-medium text-slate-900 leading-relaxed flex-1">
+              <p className="font-english text-[17.5px] font-normal text-[#202124] leading-[1.65] flex-1">
                 {sentenceContext.en}
               </p>
               <button
                 onClick={() => playAudio(sentenceContext.en, 0.88)}
                 className={`min-w-[42px] min-h-[42px] shrink-0 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                   isPlayingAudio
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "bg-[#1a73e8] text-white"
+                    : "bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed]"
                 }`}
                 aria-label="Listen to sentence"
               >
@@ -142,21 +144,21 @@ export default function VocabularyBottomSheet({
             </div>
 
             {sentenceContext.bnPronounce && (
-              <div className="pt-3 border-t border-slate-100">
-                <div className="text-[11px] font-medium text-slate-400 mb-1 font-bengali">
+              <div className="pt-3.5 border-t border-[#e8eaed]">
+                <div className="text-[11px] font-medium text-[#5f6368] mb-1 font-bengali">
                   বাংলা উচ্চারণ
                 </div>
-                <p className="font-bengali text-[15px] text-slate-600 leading-relaxed">
+                <p className="font-bengali text-[15px] text-[#3c4043] leading-[1.7]">
                   {sentenceContext.bnPronounce}
                 </p>
               </div>
             )}
 
-            <div className="pt-3 border-t border-slate-100">
-              <div className="text-[11px] font-medium text-slate-400 mb-1 font-bengali">
+            <div className="pt-3.5 border-t border-[#e8eaed]">
+              <div className="text-[11px] font-medium text-[#5f6368] mb-1 font-bengali">
                 বাংলা অর্থ
               </div>
-              <p className="font-bengali text-[17px] font-semibold text-slate-900 leading-relaxed">
+              <p className="font-bengali text-[17.5px] font-medium text-[#202124] leading-[1.7]">
                 {sentenceContext.bn}
               </p>
             </div>
@@ -167,25 +169,25 @@ export default function VocabularyBottomSheet({
             <div className="mt-5 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-baseline gap-2">
-                    <h2 className="text-2xl font-bold text-slate-900 capitalize">
+                  <div className="flex items-baseline gap-2.5">
+                    <h2 className="text-[26px] font-normal text-[#202124] capitalize leading-tight">
                       {vocab.cleanWord || vocab.word}
                     </h2>
                     {vocab.partOfSpeech && (
-                      <span className="text-xs text-slate-400 font-medium">
+                      <span className="text-xs text-[#5f6368] font-medium">
                         {vocab.partOfSpeech}
                       </span>
                     )}
                   </div>
                   {(vocab.phonetic || vocab.banglaPronunciation) && (
-                    <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                    <p className="text-sm text-[#5f6368] mt-1.5 flex items-center gap-2">
                       {vocab.banglaPronunciation && (
-                        <span className="font-bengali font-medium text-slate-700">
+                        <span className="font-bengali font-medium text-[#3c4043]">
                           {vocab.banglaPronunciation}
                         </span>
                       )}
                       {vocab.phonetic && (
-                        <span className="font-mono text-xs text-slate-400">
+                        <span className="font-mono text-xs text-[#5f6368]">
                           {vocab.phonetic}
                         </span>
                       )}
@@ -202,8 +204,8 @@ export default function VocabularyBottomSheet({
                   }
                   className={`min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                     isPlayingAudio
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-[#1a73e8] text-white"
+                      : "bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed]"
                   }`}
                   aria-label="Listen pronunciation"
                 >
@@ -211,53 +213,56 @@ export default function VocabularyBottomSheet({
                 </button>
               </div>
 
-              {/* Meaning */}
-              <div className="pt-3 border-t border-slate-100">
-                <div className="text-[11px] font-medium text-slate-400 mb-1 font-bengali">
-                  বাংলা অর্থ
+              {/* Word Meaning */}
+              <div className="pt-3.5 border-t border-[#e8eaed]">
+                <div className="text-[11px] font-medium text-[#5f6368] mb-1 font-bengali">
+                  শব্দের বাংলা অর্থ
                 </div>
-                <div className="font-bengali text-xl font-semibold text-slate-900">
+                <div className="font-bengali text-[20px] font-medium text-[#202124] leading-snug">
                   {vocab.bengaliMeaning}
                 </div>
                 {vocab.englishDefinition && (
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  <p className="text-[13.5px] text-[#5f6368] mt-1.5 leading-relaxed">
                     {vocab.englishDefinition}
                   </p>
                 )}
               </div>
 
-              {/* Clean 1-Tap Full Sentence Link */}
+              {/* Instant Full-Sentence Meaning Preview (Zero clutter needed inside the article!) */}
               {sentenceContext && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("sentence")}
-                  className="w-full py-3 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between gap-3 transition-colors active:scale-[0.99]"
-                >
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold text-indigo-600 font-bengali">
-                      পুরো বাক্যটির অর্থ দেখুন
-                    </div>
-                    <p className="font-bengali text-xs text-slate-600 truncate mt-0.5">
-                      {sentenceContext.bn}
-                    </p>
+                <div className="p-3.5 rounded-2xl bg-[#f8f9fa] border border-[#e8eaed] space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-[#5f6368] font-bengali">
+                      এই বাক্যের পূর্ণ অর্থ
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("sentence")}
+                      className="inline-flex items-center gap-0.5 text-[11.5px] font-medium text-[#1a73e8] hover:underline font-bengali cursor-pointer"
+                    >
+                      উচ্চারণ ও অডিও
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
-                </button>
+                  <p className="font-bengali text-[14.5px] text-[#202124] leading-[1.65]">
+                    {sentenceContext.bn}
+                  </p>
+                </div>
               )}
 
               {/* Example Sentence */}
               {(vocab.exampleSentenceEn || vocab.exampleSentenceBn) && (
-                <div className="pt-3 border-t border-slate-100 text-xs">
-                  <div className="text-[11px] font-medium text-slate-400 mb-1">
+                <div className="pt-3.5 border-t border-[#e8eaed] text-[13px]">
+                  <div className="text-[11px] font-medium text-[#5f6368] mb-1">
                     Example
                   </div>
                   {vocab.exampleSentenceEn && (
-                    <p className="text-slate-700 italic">
+                    <p className="text-[#3c4043] leading-relaxed">
                       &ldquo;{vocab.exampleSentenceEn}&rdquo;
                     </p>
                   )}
                   {vocab.exampleSentenceBn && (
-                    <p className="font-bengali text-slate-500 mt-1">
+                    <p className="font-bengali text-[#5f6368] mt-1 leading-relaxed">
                       {vocab.exampleSentenceBn}
                     </p>
                   )}
@@ -266,7 +271,7 @@ export default function VocabularyBottomSheet({
 
               {/* Prev / Next Word Controls */}
               {vocabList.length > 1 && onSelectVocab && (
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-[#e8eaed] flex items-center justify-between">
                   <button
                     onClick={() =>
                       hasPrev && onSelectVocab(vocabList[currentIndex - 1])
@@ -274,15 +279,15 @@ export default function VocabularyBottomSheet({
                     disabled={!hasPrev}
                     className={`min-h-[40px] px-2 flex items-center gap-1 text-xs font-medium ${
                       hasPrev
-                        ? "text-slate-700 hover:text-slate-900"
-                        : "opacity-30 text-slate-400"
+                        ? "text-[#1a73e8] hover:text-[#174ea6]"
+                        : "opacity-30 text-[#5f6368]"
                     }`}
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Prev
                   </button>
 
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-[#5f6368]">
                     {currentIndex >= 0
                       ? `${currentIndex + 1} / ${vocabList.length}`
                       : ""}
@@ -295,8 +300,8 @@ export default function VocabularyBottomSheet({
                     disabled={!hasNext}
                     className={`min-h-[40px] px-2 flex items-center gap-1 text-xs font-medium ${
                       hasNext
-                        ? "text-slate-700 hover:text-slate-900"
-                        : "opacity-30 text-slate-400"
+                        ? "text-[#1a73e8] hover:text-[#174ea6]"
+                        : "opacity-30 text-[#5f6368]"
                     }`}
                   >
                     Next

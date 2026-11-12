@@ -3,17 +3,13 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
   Search,
   Menu,
   X,
   Plus,
   BookA,
   ArrowRight,
-  Clock,
-  Sparkles,
   Play,
-  SlidersHorizontal,
 } from "lucide-react";
 import { PassageListItem, Difficulty } from "@/types/reading";
 
@@ -52,51 +48,25 @@ export default function HomeFeed({
 
   const featuredPassage = passages[0];
 
-  const difficultyStyles: Record<
-    Difficulty,
-    { label: string; dot: string; text: string; bg: string }
-  > = {
-    BEGINNER: {
-      label: "Beginner",
-      dot: "bg-emerald-500",
-      text: "text-emerald-700",
-      bg: "bg-emerald-50 border-emerald-200/70",
-    },
-    INTERMEDIATE: {
-      label: "Intermediate",
-      dot: "bg-amber-500",
-      text: "text-amber-700",
-      bg: "bg-amber-50 border-amber-200/70",
-    },
-    ADVANCED: {
-      label: "Advanced",
-      dot: "bg-rose-500",
-      text: "text-rose-700",
-      bg: "bg-rose-50 border-rose-200/70",
-    },
+  const difficultyLabels: Record<Difficulty, string> = {
+    BEGINNER: "Beginner",
+    INTERMEDIATE: "Intermediate",
+    ADVANCED: "Advanced",
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f6f8] text-slate-900 font-sans">
-      {/* Stylish Sticky Header with Menu */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-600/20 group-active:scale-95 transition-transform">
-              <BookOpen className="w-[18px] h-[18px]" />
-            </div>
-            <div>
-              <span className="text-[16px] font-bold tracking-tight text-slate-900 block leading-none">
-                BhashaRead
-              </span>
-              <span className="font-bengali text-[11px] font-medium text-slate-500 mt-0.5 block leading-none">
-                ইংরেজি থেকে বাংলা রিডার
-              </span>
-            </div>
+    <div className="min-h-screen flex flex-col bg-white text-[#202124] font-english">
+      {/* Clean Editorial Google-Style Header */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e8eaed]">
+        <div className="max-w-lg mx-auto px-5 h-14 flex items-center justify-between gap-2">
+          {/* Minimal Clean Brand Title */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="text-[19px] font-medium tracking-tight text-[#202124] leading-none">
+              BhashaRead
+            </span>
           </Link>
 
-          {/* Header Useful Action Buttons */}
+          {/* Clean Header Action Controls */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -104,24 +74,32 @@ export default function HomeFeed({
                 setSearchOpen((prev) => !prev);
                 setMenuOpen(false);
               }}
-              className={`min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
+              className={`min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                 searchOpen
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-[#e8f0fe] text-[#1967d2]"
+                  : "text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]"
               }`}
               aria-label="Search stories"
               title="Search stories"
             >
-              <Search className="w-[18px] h-[18px]" />
+              <Search className="w-[19px] h-[19px]" />
             </button>
 
             <Link
               href="/vocabulary"
-              className="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors active:scale-95"
+              className="min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124] transition-colors active:scale-95"
               aria-label="Vocabulary Dictionary"
               title="Dictionary"
             >
-              <BookA className="w-[18px] h-[18px]" />
+              <BookA className="w-[19px] h-[19px]" />
+            </Link>
+
+            <Link
+              href="/upload"
+              className="ml-1 min-h-[34px] px-3 rounded-full border border-[#dadce0] text-[13px] font-medium text-[#1a73e8] hover:bg-[#e8f0fe]/60 flex items-center gap-1 transition-colors active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add</span>
             </Link>
 
             <button
@@ -130,18 +108,18 @@ export default function HomeFeed({
                 setMenuOpen((prev) => !prev);
                 setSearchOpen(false);
               }}
-              className={`min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
+              className={`min-w-[40px] min-h-[40px] -mr-2 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                 menuOpen
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "bg-[#e8f0fe] text-[#1967d2]"
+                  : "text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]"
               }`}
               aria-label="Toggle Menu"
               title="Menu"
             >
               {menuOpen ? (
-                <X className="w-[18px] h-[18px]" />
+                <X className="w-[19px] h-[19px]" />
               ) : (
-                <Menu className="w-[18px] h-[18px]" />
+                <Menu className="w-[19px] h-[19px]" />
               )}
             </button>
           </div>
@@ -149,21 +127,21 @@ export default function HomeFeed({
 
         {/* Expandable Search Input */}
         {searchOpen && (
-          <div className="border-t border-slate-100 bg-white px-4 py-3">
-            <div className="max-w-md mx-auto relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="border-t border-[#e8eaed] bg-[#f8f9fa] px-5 py-3">
+            <div className="max-w-lg mx-auto relative">
+              <Search className="w-4 h-4 text-[#5f6368] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="গল্পের নাম বা বিষয় লিখুন (Search)..."
-                className="w-full min-h-[42px] pl-10 pr-9 rounded-xl bg-slate-100/90 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-500"
+                placeholder="গল্পের নাম বা বিষয় খুঁজুন..."
+                className="w-full min-h-[42px] pl-10 pr-9 rounded-full bg-white border border-[#dadce0] text-sm text-[#202124] placeholder:text-[#5f6368] focus:outline-hidden focus:ring-2 focus:ring-[#1a73e8]/25 focus:border-[#1a73e8]"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#5f6368] hover:text-[#202124]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -172,28 +150,24 @@ export default function HomeFeed({
           </div>
         )}
 
-        {/* Stylish Slide-Down Header Menu */}
+        {/* Slide-Down Menu Drawer */}
         {menuOpen && (
-          <div className="border-t border-slate-100 bg-white px-4 py-3.5 shadow-lg">
-            <div className="max-w-md mx-auto space-y-2">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
-                Navigation Menu
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
+          <div className="border-t border-[#e8eaed] bg-white px-5 py-4 shadow-md">
+            <div className="max-w-lg mx-auto space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 <Link
                   href="/vocabulary"
                   onClick={() => setMenuOpen(false)}
-                  className="min-h-[48px] p-3 rounded-2xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/80 flex items-center gap-2.5 transition-colors active:scale-98"
+                  className="min-h-[48px] p-3 rounded-2xl bg-[#f8f9fa] hover:bg-[#e8f0fe]/60 border border-[#e8eaed] flex items-center gap-2.5 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#e8f0fe] text-[#1967d2] flex items-center justify-center shrink-0">
                     <BookA className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900">
+                    <div className="text-[13px] font-medium text-[#202124]">
                       Dictionary
                     </div>
-                    <div className="font-bengali text-[11px] text-slate-500 truncate">
+                    <div className="font-bengali text-[11.5px] text-[#5f6368] truncate">
                       শব্দকোষ ({totalVocabCount}+)
                     </div>
                   </div>
@@ -202,17 +176,17 @@ export default function HomeFeed({
                 <Link
                   href="/upload"
                   onClick={() => setMenuOpen(false)}
-                  className="min-h-[48px] p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/80 flex items-center gap-2.5 transition-colors active:scale-98"
+                  className="min-h-[48px] p-3 rounded-2xl bg-[#f8f9fa] hover:bg-[#e8f0fe]/60 border border-[#e8eaed] flex items-center gap-2.5 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#e8f0fe] text-[#1967d2] flex items-center justify-center shrink-0">
                     <Plus className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900">
+                    <div className="text-[13px] font-medium text-[#202124]">
                       Add Story
                     </div>
-                    <div className="font-bengali text-[11px] text-slate-500 truncate">
-                      নতুন JSON যোগ করুন
+                    <div className="font-bengali text-[11.5px] text-[#5f6368] truncate">
+                      নতুন গল্প যোগ করুন
                     </div>
                   </div>
                 </Link>
@@ -222,15 +196,15 @@ export default function HomeFeed({
                 <Link
                   href={`/read/${featuredPassage.slug}`}
                   onClick={() => setMenuOpen(false)}
-                  className="min-h-[46px] w-full px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-between transition-colors active:scale-98"
+                  className="min-h-[44px] w-full px-4 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#174ea6] text-white flex items-center justify-between transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <Play className="w-4 h-4 fill-current" />
-                    <span className="text-xs font-bold font-bengali">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                    <span className="text-[13px] font-medium font-bengali truncate">
                       পড়া শুরু করুন: {featuredPassage.titleEn}
                     </span>
                   </div>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 shrink-0" />
                 </Link>
               )}
             </div>
@@ -239,20 +213,16 @@ export default function HomeFeed({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-5 pb-10 space-y-4">
-        {/* Interactive Level Filter Bar */}
-        <section>
-          <div className="flex items-center justify-between mb-2.5 px-0.5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-              <span>Reading Library</span>
-            </h2>
-            <span className="text-xs font-semibold text-slate-400">
-              {filteredPassages.length} shown
-            </span>
+      <main className="flex-1 max-w-lg w-full mx-auto px-5 pt-5 pb-12">
+        {/* Clean Level Filter Chips */}
+        <section className="pb-4 border-b border-[#e8eaed]">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-xs font-medium uppercase tracking-wider text-[#5f6368]">
+              Stories ({filteredPassages.length})
+            </h1>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
             {(["ALL", "BEGINNER", "INTERMEDIATE", "ADVANCED"] as const).map(
               (level) => {
                 const isActive = selectedDifficulty === level;
@@ -266,10 +236,10 @@ export default function HomeFeed({
                     key={level}
                     type="button"
                     onClick={() => setSelectedDifficulty(level)}
-                    className={`min-h-[36px] px-3.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-all active:scale-95 ${
+                    className={`min-h-[34px] px-3.5 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors active:scale-95 ${
                       isActive
-                        ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                        : "bg-white text-slate-600 border-slate-200/90 hover:border-slate-300"
+                        ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
+                        : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
                     }`}
                   >
                     {label}
@@ -280,11 +250,11 @@ export default function HomeFeed({
           </div>
         </section>
 
-        {/* Elevated Story Cards */}
-        <section className="space-y-3">
+        {/* Crisp Editorial Story Feed (No clutter cards) */}
+        <section className="divide-y divide-[#e8eaed]">
           {filteredPassages.length === 0 ? (
-            <div className="p-8 rounded-2xl bg-white border border-slate-200/80 text-center space-y-2">
-              <p className="text-sm font-semibold text-slate-700">
+            <div className="py-12 text-center space-y-2.5">
+              <p className="font-bengali text-[15px] text-[#3c4043]">
                 কোনো গল্প খুঁজে পাওয়া যায়নি
               </p>
               <button
@@ -292,66 +262,46 @@ export default function HomeFeed({
                   setSelectedDifficulty("ALL");
                   setSearchQuery("");
                 }}
-                className="text-xs font-bold text-indigo-600 hover:underline"
+                className="text-[13px] font-medium text-[#1a73e8] hover:underline"
               >
                 সব গল্প দেখুন (Reset Filters)
               </button>
             </div>
           ) : (
             filteredPassages.map((passage) => {
-              const style = difficultyStyles[passage.difficulty];
-
               return (
                 <Link
                   key={passage.id}
                   href={`/read/${passage.slug}`}
-                  className="group block p-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_6px_rgba(15,23,42,0.03)] hover:border-indigo-300 hover:shadow-[0_6px_16px_rgba(79,70,229,0.08)] active:scale-[0.99] transition-all"
+                  className="group block py-6 transition-colors active:opacity-75"
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
+                  {/* Clean Meta Eyebrow */}
+                  <div className="flex items-center gap-1.5 text-[12.5px] text-[#5f6368] mb-2">
+                    <span className="font-medium text-[#1a73e8]">
                       {passage.category}
                     </span>
-
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${style.bg} ${style.text}`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                      {style.label}
-                    </span>
+                    <span>·</span>
+                    <span>{difficultyLabels[passage.difficulty]}</span>
+                    <span>·</span>
+                    <span>{passage.readingTimeMinutes} min read</span>
                   </div>
 
-                  <h3 className="text-[17px] font-bold text-slate-900 group-hover:text-indigo-700 leading-snug transition-colors">
+                  {/* Clean Readable English Headline */}
+                  <h2 className="text-[21px] font-normal tracking-[-0.01em] text-[#202124] group-hover:text-[#1a73e8] leading-[1.3] transition-colors">
                     {passage.titleEn}
-                  </h3>
+                  </h2>
 
-                  <p className="font-bengali text-[14.5px] font-semibold text-slate-600 mt-0.5">
+                  {/* Clear Bengali Title */}
+                  <p className="font-bengali text-[15.5px] font-normal text-[#3c4043] mt-1 leading-relaxed">
                     {passage.titleBn}
                   </p>
 
+                  {/* Crisp High-Contrast Summary */}
                   {passage.summaryEn && (
-                    <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-[15px] text-[#5f6368] mt-2.5 line-clamp-2 leading-[1.6]">
                       {passage.summaryEn}
                     </p>
                   )}
-
-                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                    <div className="flex items-center gap-3 font-medium">
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {passage.readingTimeMinutes} min
-                      </span>
-
-                      <span className="inline-flex items-center gap-1 text-slate-600">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                        {passage._count.vocabularies} key words
-                      </span>
-                    </div>
-
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-                      পড়ুন
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
                 </Link>
               );
             })
@@ -359,48 +309,36 @@ export default function HomeFeed({
         </section>
       </main>
 
-      {/* Clean, Well-Structured Footer */}
-      <footer className="bg-white border-t border-slate-200/80 mt-auto">
-        <div className="max-w-md mx-auto px-5 py-6 space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
-                  <BookOpen className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-sm font-bold text-slate-900">
-                  BhashaRead
-                </span>
-              </div>
-              <p className="font-bengali text-xs text-slate-500 mt-1.5 leading-relaxed">
-                প্রতিদিন অল্প অল্প করে ইংরেজি পড়ার অভ্যাস গড়ে তুলুন, বাংলা উচ্চারণ ও অর্থের সহায়তায়।
-              </p>
-            </div>
-          </div>
+      {/* Minimal Calm Footer */}
+      <footer className="bg-[#f8f9fa] border-t border-[#e8eaed] mt-auto">
+        <div className="max-w-lg mx-auto px-5 py-6 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm font-medium text-[#202124]">
+              BhashaRead
+            </span>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 font-semibold text-slate-600">
-              <Link href="/" className="hover:text-indigo-600 transition-colors">
+            <div className="flex items-center gap-5 text-[13px] text-[#5f6368]">
+              <Link href="/" className="hover:text-[#1a73e8] transition-colors">
                 Stories
               </Link>
               <Link
                 href="/vocabulary"
-                className="hover:text-indigo-600 transition-colors"
+                className="hover:text-[#1a73e8] transition-colors"
               >
                 Dictionary
               </Link>
               <Link
                 href="/upload"
-                className="hover:text-indigo-600 transition-colors"
+                className="hover:text-[#1a73e8] transition-colors"
               >
                 Add Story
               </Link>
             </div>
-
-            <span className="text-[11px] text-slate-400 font-medium">
-              © {new Date().getFullYear()} BhashaRead
-            </span>
           </div>
+
+          <p className="font-bengali text-[12.5px] text-[#5f6368] leading-relaxed">
+            প্রতিদিন সহজ ইংরেজি গল্প ও বাংলা অর্থ অনুশীলন · {totalVocabCount}+ সংরক্ষিত শব্দ
+          </p>
         </div>
       </footer>
     </div>
