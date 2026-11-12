@@ -39,7 +39,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${hindSiliguri.variable} antialiased h-full`}
     >
-      <body className="min-h-full font-sans bg-slate-100 text-slate-900 selection:bg-indigo-500 selection:text-white">
+      <body className="min-h-full font-sans bg-white text-slate-900 selection:bg-slate-900 selection:text-white">
         {children}
       </body>
     </html>
