@@ -1,0 +1,69 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL_POOLED")
+  directUrl = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model Passage {
+  id                 String           @id @default(cuid())
+  slug               String           @unique
+  titleEn            String
+  titleBn            String
+  category           String           @default("General")
+  difficulty         DifficultyLevel  @default(BEGINNER)
+  englishContent     String           @db.Text
+  bengaliContent     String           @db.Text
+  summaryEn          String?          @db.Text
+  summaryBn          String?          @db.Text
+  readingTimeMinutes Int              @default(3)
+  isPublished        Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  sections           PassageSection[]
+  vocabularies       Vocabulary[]
+
+  @@index([difficulty])
+  @@index([category])
+  @@index([slug])
+}
+
+model PassageSection {
+  id          String   @id @default(cuid())
+  passageId   String
+  orderIndex  Int
+  englishText String   @db.Text
+  bengaliText String   @db.Text
+  passage     Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([passageId, orderIndex])
+}
+
+model Vocabulary {
+  id                String   @id @default(cuid())
+  passageId         String?
+  word              String
+  phonetic          String?
+  partOfSpeech      String?  // noun, verb, adjective, adverb, phrase, idiom
+  bengaliMeaning    String
+  englishDefinition String?  @db.Text
+  exampleSentenceEn String?  @db.Text
+  exampleSentenceBn String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  passage           Passage? @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([passageId])
+  @@index([word])
+}
