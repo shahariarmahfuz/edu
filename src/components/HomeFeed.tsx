@@ -25,26 +25,18 @@ export default function HomeFeed({
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<
-    "ALL" | Difficulty
-  >("ALL");
 
   const filteredPassages = useMemo(() => {
-    return passages.filter((p) => {
-      const matchesDifficulty =
-        selectedDifficulty === "ALL" || p.difficulty === selectedDifficulty;
-
-      const q = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return passages;
+    return passages.filter(
+      (p) =>
         p.titleEn.toLowerCase().includes(q) ||
         p.titleBn.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
-        (p.summaryEn && p.summaryEn.toLowerCase().includes(q));
-
-      return matchesDifficulty && matchesSearch;
-    });
-  }, [passages, selectedDifficulty, searchQuery]);
+        (p.summaryEn && p.summaryEn.toLowerCase().includes(q))
+    );
+  }, [passages, searchQuery]);
 
   const featuredPassage = passages[0];
 
@@ -214,41 +206,11 @@ export default function HomeFeed({
 
       {/* Main Content */}
       <main className="flex-1 max-w-lg w-full mx-auto px-5 pt-5 pb-12">
-        {/* Clean Level Filter Chips */}
-        <section className="pb-4 border-b border-[#e8eaed]">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xs font-medium uppercase tracking-wider text-[#5f6368]">
-              Stories ({filteredPassages.length})
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
-            {(["ALL", "BEGINNER", "INTERMEDIATE", "ADVANCED"] as const).map(
-              (level) => {
-                const isActive = selectedDifficulty === level;
-                const label =
-                  level === "ALL"
-                    ? "All"
-                    : level.charAt(0) + level.slice(1).toLowerCase();
-
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => setSelectedDifficulty(level)}
-                    className={`min-h-[34px] px-3.5 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors active:scale-95 ${
-                      isActive
-                        ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                        : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              }
-            )}
-          </div>
-        </section>
+        <div className="pb-2">
+          <h1 className="text-xs font-medium uppercase tracking-wider text-[#5f6368]">
+            Stories ({filteredPassages.length})
+          </h1>
+        </div>
 
         {/* Crisp Editorial Story Feed (No clutter cards) */}
         <section className="divide-y divide-[#e8eaed]">
@@ -258,13 +220,10 @@ export default function HomeFeed({
                 কোনো গল্প খুঁজে পাওয়া যায়নি
               </p>
               <button
-                onClick={() => {
-                  setSelectedDifficulty("ALL");
-                  setSearchQuery("");
-                }}
+                onClick={() => setSearchQuery("")}
                 className="text-[13px] font-medium text-[#1a73e8] hover:underline"
               >
-                সব গল্প দেখুন (Reset Filters)
+                সব গল্প দেখুন (Reset Search)
               </button>
             </div>
           ) : (
@@ -276,7 +235,7 @@ export default function HomeFeed({
                   className="group block py-6 transition-colors active:opacity-75"
                 >
                   {/* Clean Meta Eyebrow */}
-                  <div className="flex items-center gap-1.5 text-[12.5px] text-[#5f6368] mb-2">
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] text-[#5f6368] mb-2">
                     <span className="font-medium text-[#1a73e8]">
                       {passage.category}
                     </span>
