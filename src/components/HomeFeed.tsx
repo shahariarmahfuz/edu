@@ -49,7 +49,7 @@ export default function HomeFeed({
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#202124] font-english">
       {/* Clean Editorial Google-Style Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e8eaed]">
+      <header className="sticky top-0 z-40 bg-white border-b border-[#e8eaed]">
         <div className="max-w-lg mx-auto px-5 h-14 flex items-center justify-between gap-2">
           {/* Minimal Clean Brand Title */}
           <Link href="/" className="flex items-center gap-2 group">

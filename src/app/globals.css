@@ -49,36 +49,35 @@ body {
   border-radius: 9999px;
 }
 
-/* Mobile bottom sheet slide in */
+/* Mobile bottom sheet slide in (GPU-accelerated, zero jank) */
 @keyframes slideUp {
   from {
-    transform: translateY(100%);
+    transform: translate3d(0, 100%, 0);
   }
   to {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 .animate-slide-up {
-  animation: slideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+  animation: slideUp 0.16s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .tap-highlight-transparent {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Google-editorial clean clickable words: completely uninterrupted while reading */
+/* Google-editorial clean clickable words: crisp & instant */
 .clickable-word {
   display: inline;
   cursor: pointer;
   border-radius: 4px;
   padding: 1px 1px;
   margin: 0 -1px;
-  transition: background-color 0.14s ease, color 0.14s ease;
   color: inherit;
 }
 
-.clickable-word:hover,
 .clickable-word:active,
 .clickable-word.is-active {
   background-color: #e8f0fe;

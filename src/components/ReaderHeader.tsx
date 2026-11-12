@@ -33,7 +33,7 @@ export default function ReaderHeader({
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-[#e8eaed]">
+    <header className="sticky top-0 z-40 w-full bg-white border-b border-[#e8eaed]">
       <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-2">
         <Link
           href="/"

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  memo,
+} from "react";
 import Link from "next/link";
 import {
   PassageItem,
@@ -20,6 +27,118 @@ interface PassageReaderProps {
   passage: PassageItem;
 }
 
+interface ParagraphBlockProps {
+  section: PassageSectionItem;
+  fontSizeStyle: string;
+  showBanglaPronunciation: boolean;
+  isRevealed: boolean;
+  tapToRevealEnabled: boolean;
+  activeWordKeyInSection: string | null;
+  onToggleSection: (sectionId: string) => void;
+  onWordSelect: (
+    rawWord: string,
+    sentenceCtx: SentenceItem,
+    sectionId: string,
+    wordKey: string
+  ) => void;
+}
+
+const PassageParagraphBlock = memo(function PassageParagraphBlock({
+  section,
+  fontSizeStyle,
+  showBanglaPronunciation,
+  isRevealed,
+  tapToRevealEnabled,
+  activeWordKeyInSection,
+  onToggleSection,
+  onWordSelect,
+}: ParagraphBlockProps) {
+  const sentences = useMemo(
+    () => extractSentencesFromSection(section),
+    [section]
+  );
+
+  const tokenizedSentences = useMemo(() => {
+    return sentences.map((sentenceObj) =>
+      sentenceObj.en.split(/(\s+)/).map((token) => ({
+        token,
+        clean: /^\s+$/.test(token) ? "" : sanitizeWord(token),
+      }))
+    );
+  }, [sentences]);
+
+  const handleParagraphClick = useCallback(
+    (e: React.MouseEvent<HTMLParagraphElement>) => {
+      const target = (e.target as HTMLElement).closest(
+        "[data-word]"
+      ) as HTMLElement | null;
+      if (!target) return;
+
+      e.stopPropagation();
+      const sIdx = Number(target.dataset.si);
+      const rawWord = target.dataset.word || "";
+      const wKey = target.dataset.wk || "";
+      const sentenceCtx = sentences[sIdx];
+      if (sentenceCtx && rawWord) {
+        onWordSelect(rawWord, sentenceCtx, section.id, wKey);
+      }
+    },
+    [sentences, section.id, onWordSelect]
+  );
+
+  return (
+    <article
+      onClick={() => tapToRevealEnabled && onToggleSection(section.id)}
+      className={tapToRevealEnabled ? "cursor-pointer" : ""}
+    >
+      {/* Crisp High-Contrast English Paragraph (1 delegated click listener, 0 per-word closures) */}
+      <p
+        onClick={handleParagraphClick}
+        className={`font-english ${fontSizeStyle} text-[#202124] font-normal`}
+      >
+        {tokenizedSentences.map((tokens, sIdx) => (
+          <React.Fragment key={sIdx}>
+            {sIdx > 0 ? " " : ""}
+            {tokens.map((item, tIdx) => {
+              if (!item.clean) {
+                return <span key={tIdx}>{item.token}</span>;
+              }
+              const wordKey = `${sIdx}-${tIdx}`;
+              const isSelected = activeWordKeyInSection === wordKey;
+
+              return (
+                <span
+                  key={tIdx}
+                  data-word={item.token}
+                  data-si={sIdx}
+                  data-wk={wordKey}
+                  className={`clickable-word ${isSelected ? "is-active" : ""}`}
+                >
+                  {item.token}
+                </span>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </p>
+
+      {/* Clean Editorial Bengali Pronunciation right below English */}
+      {showBanglaPronunciation && section.banglaPronunciation && (
+        <p className="font-bengali text-[15px] text-[#5f6368] leading-[1.7] mt-2">
+          {section.banglaPronunciation}
+        </p>
+      )}
+
+      {/* Normal Plain-Text Bengali Translation (no box/border) */}
+      {isRevealed && section.bengaliText && (
+        <p className="font-bengali text-[16px] text-[#202124] leading-[1.75] mt-3">
+          {section.bengaliText}
+        </p>
+      )}
+    </article>
+  );
+});
+
 export default function PassageReader({ passage }: PassageReaderProps) {
   const [fontSize, setFontSize] = useState<FontSize>("md");
   const [readingMode, setReadingMode] = useState<ReadingMode>("tap-to-reveal");
@@ -35,14 +154,17 @@ export default function PassageReader({ passage }: PassageReaderProps) {
   const [activeSentence, setActiveSentence] = useState<SentenceItem | null>(
     null
   );
-  const [activeWordKey, setActiveWordKey] = useState<string | null>(null);
+  const [activeTarget, setActiveTarget] = useState<{
+    sectionId: string;
+    wordKey: string;
+  } | null>(null);
   const [sheetInitialTab, setSheetInitialTab] = useState<"word" | "sentence">(
     "word"
   );
 
   const [showGlossaryDrawer, setShowGlossaryDrawer] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [isPlayingFull, setIsPlayingFull] = useState(false);
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -70,6 +192,34 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     };
   }, []);
 
+  // Zero-rerender scroll progress bar update
+  useEffect(() => {
+    let rafId = 0;
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const bar = progressBarRef.current;
+        if (!bar) return;
+        const totalHeight =
+          document.documentElement.scrollHeight - window.innerHeight;
+        if (totalHeight > 0) {
+          const progress = Math.min(
+            100,
+            Math.max(0, (window.scrollY / totalHeight) * 100)
+          );
+          bar.style.width = `${progress}%`;
+        }
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   const handleFontSizeChange = (newSize: FontSize) => {
     setFontSize(newSize);
     if (typeof window !== "undefined") {
@@ -94,35 +244,21 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     });
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const totalHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = Math.min(
-          100,
-          Math.max(0, Math.round((window.scrollY / totalHeight) * 100))
-        );
-        setScrollProgress(progress);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const toggleSectionReveal = (sectionId: string) => {
-    if (readingMode !== "tap-to-reveal") return;
-    setRevealedSectionIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-      return next;
-    });
-  };
+  const toggleSectionReveal = useCallback(
+    (sectionId: string) => {
+      if (readingMode !== "tap-to-reveal") return;
+      setRevealedSectionIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(sectionId)) {
+          next.delete(sectionId);
+        } else {
+          next.add(sectionId);
+        }
+        return next;
+      });
+    },
+    [readingMode]
+  );
 
   const allRevealed =
     readingMode === "parallel" ||
@@ -165,63 +301,27 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleWordClick = (
-    rawWord: string,
-    sentenceCtx: SentenceItem,
-    wordKey: string,
-    e: React.MouseEvent
-  ) => {
-    e.stopPropagation();
-    const vocabData = lookupWord(rawWord, passage.vocabularies);
-    setActiveWordKey(wordKey);
-    setActiveVocab(vocabData);
-    setActiveSentence(sentenceCtx);
-    setSheetInitialTab("word");
-  };
+  const handleWordSelect = useCallback(
+    (
+      rawWord: string,
+      sentenceCtx: SentenceItem,
+      sectionId: string,
+      wordKey: string
+    ) => {
+      const vocabData = lookupWord(rawWord, passage.vocabularies);
+      setActiveTarget({ sectionId, wordKey });
+      setActiveVocab(vocabData);
+      setActiveSentence(sentenceCtx);
+      setSheetInitialTab("word");
+    },
+    [passage.vocabularies]
+  );
 
-  const closeBottomSheet = () => {
+  const closeBottomSheet = useCallback(() => {
     setActiveVocab(null);
     setActiveSentence(null);
-    setActiveWordKey(null);
-  };
-
-  // Pure, clean Google-editorial prose: zero inline clutter, uninterrupted flow
-  const renderSectionSentences = (section: PassageSectionItem) => {
-    const sentences = extractSentencesFromSection(section);
-
-    return sentences.map((sentenceObj, sIdx) => {
-      const tokens = sentenceObj.en.split(/(\s+)/);
-
-      return (
-        <React.Fragment key={sIdx}>
-          {sIdx > 0 ? " " : ""}
-          {tokens.map((token, tIdx) => {
-            if (/^\s+$/.test(token)) {
-              return <span key={tIdx}>{token}</span>;
-            }
-
-            const clean = sanitizeWord(token);
-            if (!clean) {
-              return <span key={tIdx}>{token}</span>;
-            }
-
-            const wordKey = `${section.id}-${sIdx}-${tIdx}`;
-            const isSelected = activeWordKey === wordKey;
-
-            return (
-              <span
-                key={tIdx}
-                onClick={(e) => handleWordClick(token, sentenceObj, wordKey, e)}
-                className={`clickable-word ${isSelected ? "is-active" : ""}`}
-              >
-                {token}
-              </span>
-            );
-          })}
-        </React.Fragment>
-      );
-    });
-  };
+    setActiveTarget(null);
+  }, []);
 
   const fontSizeStyle = {
     sm: "text-[16px] leading-[1.68]",
@@ -236,10 +336,11 @@ export default function PassageReader({ passage }: PassageReaderProps) {
   return (
     <div className="min-h-screen bg-white text-[#202124] pb-20 tap-highlight-transparent font-english">
       {/* Hairline Reading Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-transparent">
+      <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-transparent pointer-events-none">
         <div
-          className="h-full bg-[#1a73e8] transition-all duration-150"
-          style={{ width: `${scrollProgress}%` }}
+          ref={progressBarRef}
+          className="h-full bg-[#1a73e8] will-change-[width]"
+          style={{ width: "0%" }}
         />
       </div>
 
@@ -276,7 +377,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
           <span className="text-[#5f6368] font-normal">{difficultyLabel}</span>
         </nav>
 
-        {/* Clean Title Section (Regular editorial weight like blog.google) */}
+        {/* Clean Title Section */}
         <header className="pb-5 mb-7 border-b border-[#dadce0]">
           <h1 className="text-[28px] sm:text-[31px] font-normal tracking-[-0.015em] text-[#202124] leading-[1.24]">
             {passage.titleEn}
@@ -296,10 +397,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={handleToggleBanglaPronunciation}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center transition-colors active:scale-95 font-bengali ${
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center active:scale-95 font-bengali ${
                   showBanglaPronunciation
                     ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
+                    : "bg-white text-[#3c4043] border-[#dadce0]"
                 }`}
               >
                 <span>উচ্চারণ</span>
@@ -308,10 +409,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={handleRevealAll}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 transition-colors active:scale-95 font-bengali ${
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 active:scale-95 font-bengali ${
                   allRevealed
                     ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
+                    : "bg-white text-[#3c4043] border-[#dadce0]"
                 }`}
               >
                 <Languages className="w-3.5 h-3.5" />
@@ -321,10 +422,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={toggleFullAudio}
-                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center transition-colors active:scale-95 ${
+                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center active:scale-95 ${
                   isPlayingFull
                     ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0] hover:bg-[#f8f9fa]"
+                    : "bg-white text-[#3c4043] border-[#dadce0]"
                 }`}
                 aria-label={isPlayingFull ? "Stop reading" : "Listen to story"}
                 title={isPlayingFull ? "থামান" : "পুরো গল্প শুনুন"}
@@ -341,34 +442,23 @@ export default function PassageReader({ passage }: PassageReaderProps) {
             passage.sections.map((section: PassageSectionItem) => {
               const isRevealed =
                 readingMode === "parallel" || revealedSectionIds.has(section.id);
+              const activeKeyForSection =
+                activeTarget?.sectionId === section.id
+                  ? activeTarget.wordKey
+                  : null;
 
               return (
-                <article
+                <PassageParagraphBlock
                   key={section.id}
-                  onClick={() => toggleSectionReveal(section.id)}
-                  className={
-                    readingMode === "tap-to-reveal" ? "cursor-pointer" : ""
-                  }
-                >
-                  {/* Crisp High-Contrast English Paragraph */}
-                  <p className={`font-english ${fontSizeStyle} text-[#202124] font-normal`}>
-                    {renderSectionSentences(section)}
-                  </p>
-
-                  {/* Clean Editorial Bengali Pronunciation right below English */}
-                  {showBanglaPronunciation && section.banglaPronunciation && (
-                    <p className="font-bengali text-[15px] text-[#5f6368] leading-[1.7] mt-2">
-                      {section.banglaPronunciation}
-                    </p>
-                  )}
-
-                  {/* Normal Plain-Text Bengali Translation (no box/border) */}
-                  {isRevealed && section.bengaliText && (
-                    <p className="font-bengali text-[16px] text-[#202124] leading-[1.75] mt-3">
-                      {section.bengaliText}
-                    </p>
-                  )}
-                </article>
+                  section={section}
+                  fontSizeStyle={fontSizeStyle}
+                  showBanglaPronunciation={showBanglaPronunciation}
+                  isRevealed={isRevealed}
+                  tapToRevealEnabled={readingMode === "tap-to-reveal"}
+                  activeWordKeyInSection={activeKeyForSection}
+                  onToggleSection={toggleSectionReveal}
+                  onWordSelect={handleWordSelect}
+                />
               );
             })
           ) : (
@@ -400,15 +490,15 @@ export default function PassageReader({ passage }: PassageReaderProps) {
         }}
       />
 
-      {/* Minimal Vocabulary Glossary Sheet */}
+      {/* Lightweight Vocabulary Glossary Sheet (No costly backdrop-blur) */}
       {showGlossaryDrawer && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div
-            className="fixed inset-0 bg-[#202124]/35 backdrop-blur-[1px]"
+            className="fixed inset-0 bg-[#202124]/40"
             onClick={() => setShowGlossaryDrawer(false)}
           />
-          <div className="relative z-10 w-full max-w-lg mx-auto max-h-[80vh] flex flex-col rounded-t-3xl bg-white border-t border-[#e8eaed] shadow-2xl p-5 animate-slide-up text-[#202124]">
-            <div className="w-10 h-1 bg-[#dadce0] rounded-full mx-auto mb-4" />
+          <div className="relative z-10 w-full max-w-lg mx-auto max-h-[78vh] flex flex-col rounded-t-3xl bg-white border-t border-[#e8eaed] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up text-[#202124]">
+            <div className="w-9 h-1 bg-[#dadce0] rounded-full mx-auto mb-3.5" />
 
             <div className="flex items-center justify-between pb-3 border-b border-[#e8eaed]">
               <h3 className="font-medium text-base text-[#202124] font-bengali">
@@ -416,7 +506,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               </h3>
               <button
                 onClick={() => setShowGlossaryDrawer(false)}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] text-[#5f6368] text-sm"
+                className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] text-[#5f6368] text-sm"
               >
                 ✕
               </button>
