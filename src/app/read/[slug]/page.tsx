@@ -2,7 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import PassageReader from "@/components/PassageReader";
-import { PassageItem } from "@/types/reading";
+import { PassageItem, SentenceItem } from "@/types/reading";
 import { Metadata } from "next";
 
 interface PageProps {
@@ -70,6 +70,12 @@ export default async function ReadPage({ params }: PageProps) {
     ...passage,
     createdAt: passage.createdAt.toISOString(),
     updatedAt: passage.updatedAt.toISOString(),
+    sections: passage.sections.map((sec) => ({
+      ...sec,
+      sentences: Array.isArray(sec.sentences)
+        ? (sec.sentences as unknown as SentenceItem[])
+        : null,
+    })),
   };
 
   return <PassageReader passage={clientPassage} />;

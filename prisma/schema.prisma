@@ -45,6 +45,7 @@ model PassageSection {
   englishText         String   @db.Text
   banglaPronunciation String?  @db.Text // বাংলা উচ্চারণ (যেমন: ওয়ান্স আপন আ টাইম...)
   bengaliText         String   @db.Text // বাংলা অনুবাদ
+  sentences           Json?    // Optional explicit array of { en, bnPronounce, bn } for multi-sentence blocks
   passage             Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
 
   @@index([passageId, orderIndex])

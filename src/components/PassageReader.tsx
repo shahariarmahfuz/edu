@@ -5,12 +5,14 @@ import {
   PassageItem,
   VocabularyItem,
   PassageSectionItem,
+  SentenceItem,
   FontSize,
   ReadingMode,
 } from "@/types/reading";
 import ReaderHeader from "./ReaderHeader";
 import VocabularyBottomSheet from "./VocabularyBottomSheet";
 import { lookupWord, sanitizeWord } from "@/lib/dictionary";
+import { extractSentencesFromSection } from "@/lib/sentenceSplitter";
 import {
   Sparkles,
   BookMarked,
@@ -18,6 +20,7 @@ import {
   CheckCircle2,
   Volume2,
   ChevronDown,
+  MessageSquareText,
 } from "lucide-react";
 
 interface PassageReaderProps {
@@ -25,31 +28,41 @@ interface PassageReaderProps {
 }
 
 export default function PassageReader({ passage }: PassageReaderProps) {
-  // Reading Ergonomics State (Light Mode Only)
   const [fontSize, setFontSize] = useState<FontSize>("md");
   const [readingMode, setReadingMode] = useState<ReadingMode>("tap-to-reveal");
-  const [showBanglaPronunciation, setShowBanglaPronunciation] = useState<boolean>(true);
+  const [showBanglaPronunciation, setShowBanglaPronunciation] =
+    useState<boolean>(true);
 
-  // Set of section IDs that are revealed
   const [revealedSectionIds, setRevealedSectionIds] = useState<Set<string>>(
     new Set()
   );
 
-  // Active word lookup for bottom sheet modal
+  // Bottom sheet state: active word + active sentence context + initial tab
   const [activeVocab, setActiveVocab] = useState<VocabularyItem | null>(null);
+  const [activeSentence, setActiveSentence] = useState<SentenceItem | null>(
+    null
+  );
+  const [sheetInitialTab, setSheetInitialTab] = useState<"word" | "sentence">(
+    "word"
+  );
+
   const [showGlossaryDrawer, setShowGlossaryDrawer] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Read preferences from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedFontSize = localStorage.getItem("bhasha_fontsize") as FontSize | null;
-      const savedMode = localStorage.getItem("bhasha_mode") as ReadingMode | null;
+      const savedFontSize = localStorage.getItem(
+        "bhasha_fontsize"
+      ) as FontSize | null;
+      const savedMode = localStorage.getItem(
+        "bhasha_mode"
+      ) as ReadingMode | null;
       const savedPronounce = localStorage.getItem("bhasha_show_pronounce");
 
       if (savedFontSize) setFontSize(savedFontSize);
       if (savedMode) setReadingMode(savedMode);
-      if (savedPronounce !== null) setShowBanglaPronunciation(savedPronounce === "true");
+      if (savedPronounce !== null)
+        setShowBanglaPronunciation(savedPronounce === "true");
     }
   }, []);
 
@@ -77,7 +90,6 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     });
   };
 
-  // Scroll Progress listener
   useEffect(() => {
     const handleScroll = () => {
       const totalHeight =
@@ -95,7 +107,6 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Toggle reveal for a specific section
   const toggleSectionReveal = (sectionId: string) => {
     if (readingMode !== "tap-to-reveal") return;
     setRevealedSectionIds((prev) => {
@@ -109,7 +120,6 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     });
   };
 
-  // Reveal all or Hide all sentences
   const handleRevealAll = () => {
     if (revealedSectionIds.size === passage.sections.length) {
       setRevealedSectionIds(new Set());
@@ -118,7 +128,6 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     }
   };
 
-  // Pronounce an entire sentence
   const playSentenceAudio = (sentence: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -130,61 +139,100 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     }
   };
 
-  // Handle clicking ANY individual word
-  const handleWordClick = (rawWord: string, e: React.MouseEvent) => {
+  // Tapping any word opens Word tab WITH its exact sentence context ready in 1 tap
+  const handleWordClick = (
+    rawWord: string,
+    sentenceCtx: SentenceItem,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     const vocabData = lookupWord(rawWord, passage.vocabularies);
     setActiveVocab(vocabData);
+    setActiveSentence(sentenceCtx);
+    setSheetInitialTab("word");
   };
 
-  // Set of passage-specific vocabulary clean words for highlighting
+  // Tapping the inline sentence pill opens the exact sentence's meaning immediately
+  const handleSentenceClick = (
+    sentenceCtx: SentenceItem,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setActiveVocab(null);
+    setActiveSentence(sentenceCtx);
+    setSheetInitialTab("sentence");
+  };
+
+  const closeBottomSheet = () => {
+    setActiveVocab(null);
+    setActiveSentence(null);
+  };
+
   const highlightedWordsSet = new Set(
     (passage.vocabularies || []).map((v) => sanitizeWord(v.word))
   );
 
-  // Render English sentence where EVERY SINGLE WORD is clickable
-  const renderEveryWordClickable = (text: string) => {
-    // Split by whitespace while preserving punctuation
-    const tokens = text.split(/(\s+)/);
+  // Render a phrase split into sentences, where every word is clickable AND every sentence has an instant meaning pill
+  const renderSectionSentences = (section: PassageSectionItem) => {
+    const sentences = extractSentencesFromSection(section);
 
-    return tokens.map((token, idx) => {
-      // If whitespace, return plain span
-      if (/^\s+$/.test(token)) {
-        return <span key={idx}>{token}</span>;
-      }
-
-      const clean = sanitizeWord(token);
-      if (!clean) {
-        return <span key={idx}>{token}</span>;
-      }
-
-      // Check if this word is a key vocabulary word from the passage
-      const isHighlighted = highlightedWordsSet.has(clean);
+    return sentences.map((sentenceObj, sIdx) => {
+      const tokens = sentenceObj.en.split(/(\s+)/);
 
       return (
-        <span
-          key={idx}
-          onClick={(e) => handleWordClick(token, e)}
-          className={`clickable-word ${
-            isHighlighted
-              ? "is-highlighted px-1.5 py-0.5 rounded-md shadow-2xs font-semibold"
-              : "hover:bg-indigo-100/70"
-          }`}
-          title={`Click to see meaning & pronunciation of "${clean}"`}
-        >
-          {token}
-          {isHighlighted && <span className="text-[10px] ml-0.5 opacity-80">✦</span>}
+        <span key={sIdx} className="inline">
+          {tokens.map((token, tIdx) => {
+            if (/^\s+$/.test(token)) {
+              return <span key={tIdx}>{token}</span>;
+            }
+
+            const clean = sanitizeWord(token);
+            if (!clean) {
+              return <span key={tIdx}>{token}</span>;
+            }
+
+            const isHighlighted = highlightedWordsSet.has(clean);
+
+            return (
+              <span
+                key={tIdx}
+                onClick={(e) => handleWordClick(token, sentenceObj, e)}
+                className={`clickable-word ${
+                  isHighlighted
+                    ? "is-highlighted px-1.5 py-0.5 rounded-md shadow-2xs font-semibold"
+                    : "hover:bg-indigo-100/70"
+                }`}
+                title={`Tap "${clean}" for meaning`}
+              >
+                {token}
+                {isHighlighted && (
+                  <span className="text-[10px] ml-0.5 opacity-80">✦</span>
+                )}
+              </span>
+            );
+          })}
+
+          {/* Instant 1-tap Sentence Meaning Pill */}
+          <button
+            type="button"
+            onClick={(e) => handleSentenceClick(sentenceObj, e)}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 ml-1 mr-1.5 align-middle rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bengali font-bold leading-none active:scale-95 transition-transform cursor-pointer"
+            title="এই বাক্যটির পুরো বাংলা অর্থ দেখুন"
+            aria-label="See full sentence meaning"
+          >
+            <MessageSquareText className="w-3 h-3" />
+            <span>অর্থ</span>
+          </button>
         </span>
       );
     });
   };
 
-  // Font size styling for English sentence
   const fontSizeStyle = {
-    sm: "text-[16px] leading-[1.7]",
-    md: "text-[18px] leading-[1.75]",
-    lg: "text-[20px] leading-[1.8]",
-    xl: "text-[22px] leading-[1.85]",
+    sm: "text-[16px] leading-[1.75]",
+    md: "text-[18px] leading-[1.8]",
+    lg: "text-[20px] leading-[1.85]",
+    xl: "text-[22px] leading-[1.9]",
   }[fontSize];
 
   return (
@@ -197,7 +245,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
         />
       </div>
 
-      {/* Reader Navigation Header (Clean Light Mode) */}
+      {/* Reader Navigation Header */}
       <ReaderHeader
         titleEn={passage.titleEn}
         difficulty={passage.difficulty}
@@ -240,10 +288,13 @@ export default function PassageReader({ passage }: PassageReaderProps) {
           )}
 
           {/* Quick Tip Banner */}
-          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span className="flex items-center gap-1 font-medium">
-              💡 <strong className="text-slate-800">যেকোনো শব্দে</strong> ট্যাপ করে উচ্চারণ ও অর্থ দেখুন
-            </span>
+          <div className="mt-3.5 pt-3 border-t border-slate-100 text-[11px] text-slate-600 font-bengali leading-relaxed">
+            💡 যেকোনো <strong className="text-indigo-700">শব্দে</strong> ট্যাপ
+            করলে শব্দের অর্থ, আর বাক্যের শেষে{" "}
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+              অর্থ
+            </span>{" "}
+            চাপলে ওই নির্দিষ্ট বাক্যের পুরো অর্থ পাবেন।
           </div>
         </div>
 
@@ -253,7 +304,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
             <Languages className="w-4 h-4 text-indigo-600" />
             <span className="font-semibold text-[11px]">
               {readingMode === "tap-to-reveal"
-                ? "বাক্যে ট্যাপ করে বাংলা অর্থ দেখুন"
+                ? "কার্ডে ট্যাপ করে পুরো অংশের বাংলা দেখুন"
                 : "সমান্তরাল বাংলা অনুবাদ সক্রিয়"}
             </span>
           </div>
@@ -270,7 +321,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
           )}
         </div>
 
-        {/* Main Bilingual Passage Body (Phrase by Phrase with 3 Layers) */}
+        {/* Main Bilingual Passage Body */}
         <div className="space-y-4">
           {passage.sections && passage.sections.length > 0 ? (
             passage.sections.map((section: PassageSectionItem, index: number) => {
@@ -283,11 +334,11 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                   onClick={() => toggleSectionReveal(section.id)}
                   className={`relative p-4 rounded-3xl bg-white border border-slate-200 shadow-xs transition-all duration-200 ${
                     readingMode === "tap-to-reveal"
-                      ? "cursor-pointer hover:border-indigo-300 active:scale-[0.995]"
+                      ? "cursor-pointer hover:border-indigo-300"
                       : ""
                   }`}
                 >
-                  {/* Sentence Number & Audio Button */}
+                  {/* Section Number & Audio Button */}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold text-slate-400 font-mono">
                       #{index + 1}
@@ -296,25 +347,25 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                     <button
                       onClick={(e) => playSentenceAudio(section.englishText, e)}
                       className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 active:scale-95 transition-all"
-                      title="Listen to full sentence pronunciation"
-                      aria-label="Play sentence"
+                      title="Listen to full section"
+                      aria-label="Play section"
                     >
                       <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* LAYER 1: English Phrase with Every Word Clickable */}
+                  {/* LAYER 1: English Sentences with Clickable Words + Instant Sentence Meaning Pills */}
                   <div
                     className={`font-english ${fontSizeStyle} font-medium tracking-normal text-slate-900`}
                   >
-                    {renderEveryWordClickable(section.englishText)}
+                    {renderSectionSentences(section)}
                   </div>
 
-                  {/* LAYER 2: বাংলা উচ্চারণ (Bengali Pronunciation / Transliteration) */}
+                  {/* LAYER 2: বাংলা উচ্চারণ */}
                   {showBanglaPronunciation && section.banglaPronunciation && (
                     <div className="mt-3 p-3 rounded-2xl bg-violet-50/80 border border-violet-100">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-0.5 flex items-center gap-1">
-                        <span>বাংলা উচ্চারণ</span>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-0.5">
+                        বাংলা উচ্চারণ
                       </div>
                       <p className="font-bengali text-[15px] font-semibold text-violet-950 leading-relaxed">
                         {section.banglaPronunciation}
@@ -322,11 +373,11 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                     </div>
                   )}
 
-                  {/* LAYER 3: বাংলা অনুবাদ (Bengali Meaning / Translation) */}
+                  {/* LAYER 3: বাংলা অনুবাদ */}
                   {isRevealed && section.bengaliText && (
                     <div className="mt-3 p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-100 animate-fadeIn">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-0.5">
-                        বাংলা অনুবাদ (Meaning)
+                        পুরো অংশের বাংলা অনুবাদ
                       </div>
                       <p className="font-bengali text-[16px] font-medium text-slate-900 leading-relaxed">
                         {section.bengaliText}
@@ -337,7 +388,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                   {/* Tap prompt if unrevealed */}
                   {readingMode === "tap-to-reveal" && !isRevealed && (
                     <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-indigo-600/70 select-none">
-                      <span>বাংলা অর্থ দেখতে স্পর্শ করুন</span>
+                      <span>পুরো অংশের অনুবাদ দেখতে স্পর্শ করুন</span>
                       <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                   )}
@@ -346,7 +397,9 @@ export default function PassageReader({ passage }: PassageReaderProps) {
             })
           ) : (
             <div className="p-4 bg-white rounded-3xl border border-slate-200">
-              <p className="text-slate-900 font-english">{passage.englishContent}</p>
+              <p className="text-slate-900 font-english">
+                {passage.englishContent}
+              </p>
             </div>
           )}
         </div>
@@ -398,12 +451,18 @@ export default function PassageReader({ passage }: PassageReaderProps) {
         </div>
       </div>
 
-      {/* Interactive Bottom Sheet for Clicked Word */}
+      {/* Interactive Bottom Sheet (Word + Full Sentence Fast Switcher) */}
       <VocabularyBottomSheet
         vocab={activeVocab}
+        sentenceContext={activeSentence}
+        initialTab={sheetInitialTab}
         vocabList={passage.vocabularies}
-        onClose={() => setActiveVocab(null)}
-        onSelectVocab={(v) => setActiveVocab(v)}
+        onClose={closeBottomSheet}
+        onSelectVocab={(v) => {
+          setActiveVocab(v);
+          setActiveSentence(null);
+          setSheetInitialTab("word");
+        }}
       />
 
       {/* Full Vocabulary Glossary Bottom Drawer */}
@@ -440,6 +499,8 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                   onClick={() => {
                     setShowGlossaryDrawer(false);
                     setActiveVocab(v);
+                    setActiveSentence(null);
+                    setSheetInitialTab("word");
                   }}
                   className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all active:scale-[0.99]"
                 >

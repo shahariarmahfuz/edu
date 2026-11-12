@@ -87,15 +87,21 @@ export default function UploadPage() {
         },
         {
           orderIndex: 1,
-          englishText: "Suddenly, his iron axe slipped from his hands and fell into the water.",
-          banglaPronunciation: "সাডেনলি, হিজ আয়রন অ্যাক্স স্লিপড ফ্রম হিজ হ্যান্ডস অ্যান্ড ফেল ইনটু দ্য ওয়াটার।",
-          bengaliText: "হঠাৎ তার লোহার কুড়ালটি হাত থেকে পিছলে পানিতে পড়ে গেল।"
-        },
-        {
-          orderIndex: 2,
-          englishText: "He began to weep because he had no money to buy another axe.",
-          banglaPronunciation: "হি বিগান টু উইপ বিকজ হি হ্যাড নো মানি টু বাই অ্যানাদার অ্যাক্স।",
-          bengaliText: "সে কাঁদতে লাগল কারণ আরেকটি কুড়াল কেনার মতো টাকা তার কাছে ছিল না।"
+          englishText: "Suddenly, his iron axe slipped from his hands and fell into the water. He began to weep because he had no money to buy another axe.",
+          banglaPronunciation: "সাডেনলি, হিজ আয়রন অ্যাক্স স্লিপড ফ্রম হিজ হ্যান্ডস অ্যান্ড ফেল ইনটু দ্য ওয়াটার। হি বিগান টু উইপ বিকজ হি হ্যাড নো মানি টু বাই অ্যানাদার অ্যাক্স।",
+          bengaliText: "হঠাৎ তার লোহার কুড়ালটি হাত থেকে পিছলে পানিতে পড়ে গেল। সে কাঁদতে লাগল কারণ আরেকটি কুড়াল কেনার মতো টাকা তার কাছে ছিল না।",
+          sentences: [
+            {
+              en: "Suddenly, his iron axe slipped from his hands and fell into the water.",
+              bnPronounce: "সাডেনলি, হিজ আয়রন অ্যাক্স স্লিপড ফ্রম হিজ হ্যান্ডস অ্যান্ড ফেল ইনটু দ্য ওয়াটার।",
+              bn: "হঠাৎ তার লোহার কুড়ালটি হাত থেকে পিছলে পানিতে পড়ে গেল।"
+            },
+            {
+              en: "He began to weep because he had no money to buy another axe.",
+              bnPronounce: "হি বিগান টু উইপ বিকজ হি হ্যাড নো মানি টু বাই অ্যানাদার অ্যাক্স।",
+              bn: "সে কাঁদতে লাগল কারণ আরেকটি কুড়াল কেনার মতো টাকা তার কাছে ছিল না।"
+            }
+          ]
         }
       ],
       vocabularies: [
@@ -119,7 +125,7 @@ export default function UploadPage() {
           bengaliMeaning: "পিছলে গেল / হাত ফসকে গেল",
           englishDefinition: "Lost footing or dropped accidentally.",
           exampleSentenceEn: "The axe slipped from his wet hands.",
-          exampleBn: "ভেজা হাত থেকে কুড়ালটি পিছলে গেল।"
+          exampleSentenceBn: "ভেজা হাত থেকে কুড়ালটি পিছলে গেল।"
         },
         {
           word: "weep",

@@ -132,6 +132,7 @@ export async function POST(request: Request) {
       englishText: string;
       banglaPronunciation?: string | null;
       bengaliText: string;
+      sentences?: any;
     }> = [];
 
     if (Array.isArray(sections) && sections.length > 0) {
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
         englishText: sec.englishText.trim(),
         banglaPronunciation: sec.banglaPronunciation?.trim() || null,
         bengaliText: sec.bengaliText.trim(),
+        ...(Array.isArray(sec.sentences) ? { sentences: sec.sentences } : {}),
       }));
     } else {
       const enParagraphs = (englishContent || "")

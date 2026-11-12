@@ -20,6 +20,12 @@ export interface VocabularyItem {
   exampleSentenceBn?: string | null;
 }
 
+export interface SentenceItem {
+  en: string;
+  bnPronounce?: string | null;
+  bn: string;
+}
+
 export interface PassageSectionItem {
   id: string;
   passageId: string;
@@ -27,6 +33,7 @@ export interface PassageSectionItem {
   englishText: string;
   banglaPronunciation?: string | null; // বাক্যের বাংলা উচ্চারণ (যেমন: ওয়ান্স আপন আ টাইম...)
   bengaliText: string;                 // বাক্যের সম্পূর্ণ বাংলা অনুবাদ
+  sentences?: SentenceItem[] | null;
 }
 
 export interface PassageItem {
