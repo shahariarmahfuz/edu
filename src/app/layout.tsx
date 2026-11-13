@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Hind_Siliguri } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Bengali } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const hindSiliguri = Hind_Siliguri({
+const notoSansBengali = Noto_Sans_Bengali({
   weight: ["400", "500", "600", "700"],
   subsets: ["bengali"],
   variable: "--font-bengali",
@@ -39,7 +39,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${hindSiliguri.variable} antialiased h-full`}
+      className={`${plusJakartaSans.variable} ${notoSansBengali.variable} antialiased h-full`}
     >
       <head>
         <script
