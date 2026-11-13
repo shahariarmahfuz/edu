@@ -1,29 +1,36 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import prisma from "@/lib/prisma";
+import { backendFetch } from "@/lib/backendClient";
 import PassageReader from "@/components/PassageReader";
 import { PassageItem, SentenceItem } from "@/types/reading";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+interface PassageBackendPayload {
+  success: boolean;
+  data?: PassageItem;
+}
+
+async function fetchPassage(slug: string): Promise<PassageItem | null> {
+  const res = await backendFetch<PassageBackendPayload>(
+    `/internal/passages/${encodeURIComponent(slug)}`
+  );
+  if (!res.ok || !res.body?.success || !res.body.data) {
+    return null;
+  }
+  return res.body.data;
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const passage = await prisma.passage.findFirst({
-    where: {
-      OR: [{ slug }, { id: slug }],
-      isPublished: true,
-    },
-    select: {
-      titleEn: true,
-      titleBn: true,
-      summaryEn: true,
-    },
-  });
+  const passage = await fetchPassage(slug);
 
   if (!passage) {
     return {
@@ -41,35 +48,14 @@ export async function generateMetadata({
 
 export default async function ReadPage({ params }: PageProps) {
   const { slug } = await params;
-
-  const passage = await prisma.passage.findFirst({
-    where: {
-      OR: [{ slug }, { id: slug }],
-      isPublished: true,
-    },
-    include: {
-      sections: {
-        orderBy: {
-          orderIndex: "asc",
-        },
-      },
-      vocabularies: {
-        orderBy: {
-          word: "asc",
-        },
-      },
-    },
-  });
+  const passage = await fetchPassage(slug);
 
   if (!passage) {
     notFound();
   }
 
-  // Cast prisma passage to client PassageItem
   const clientPassage: PassageItem = {
     ...passage,
-    createdAt: passage.createdAt.toISOString(),
-    updatedAt: passage.updatedAt.toISOString(),
     sections: passage.sections.map((sec) => ({
       ...sec,
       sentences: Array.isArray(sec.sentences)

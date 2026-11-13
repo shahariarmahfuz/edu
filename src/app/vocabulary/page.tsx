@@ -1,25 +1,29 @@
 import React from "react";
-import prisma from "@/lib/prisma";
+import { backendFetch } from "@/lib/backendClient";
 import { BUILTIN_DICTIONARY } from "@/lib/dictionary";
 import VocabularyExplorer from "@/components/VocabularyExplorer";
+import { VocabularyItem } from "@/types/reading";
 
 export const dynamic = "force-dynamic";
 
+interface VocabWithPassage extends VocabularyItem {
+  passage?: {
+    slug: string;
+    titleEn: string;
+    titleBn: string;
+  } | null;
+}
+
+interface VocabBackendPayload {
+  success: boolean;
+  data?: VocabWithPassage[];
+}
+
 export default async function VocabularyPage() {
-  const dbVocabularies = await prisma.vocabulary.findMany({
-    include: {
-      passage: {
-        select: {
-          slug: true,
-          titleEn: true,
-          titleBn: true,
-        },
-      },
-    },
-    orderBy: {
-      word: "asc",
-    },
-  });
+  const res = await backendFetch<VocabBackendPayload>(
+    "/internal/vocabulary?all=true"
+  );
+  const dbVocabularies = res.body?.data ?? [];
 
   const builtinDictionary = Object.entries(BUILTIN_DICTIONARY).map(
     ([word, entry]) => ({
