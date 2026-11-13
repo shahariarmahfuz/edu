@@ -94,7 +94,7 @@ const PassageParagraphBlock = memo(function PassageParagraphBlock({
       {/* Crisp High-Contrast English Paragraph (1 delegated click listener, 0 per-word closures) */}
       <p
         onClick={handleParagraphClick}
-        className={`font-english ${fontSizeStyle} text-[#202124] font-normal`}
+        className={`font-english ${fontSizeStyle} text-[#202124] dark:text-[#e8eaed] font-normal`}
       >
         {tokenizedSentences.map((tokens, sIdx) => (
           <React.Fragment key={sIdx}>
@@ -124,14 +124,14 @@ const PassageParagraphBlock = memo(function PassageParagraphBlock({
 
       {/* Clean Editorial Bengali Pronunciation right below English */}
       {showBanglaPronunciation && section.banglaPronunciation && (
-        <p className="font-bengali text-[15px] text-[#5f6368] leading-[1.7] mt-2">
+        <p className="font-bengali text-[15px] text-[#5f6368] dark:text-[#9aa0a6] leading-[1.7] mt-2">
           {section.banglaPronunciation}
         </p>
       )}
 
       {/* Normal Plain-Text Bengali Translation (no box/border) */}
       {isRevealed && section.bengaliText && (
-        <p className="font-bengali text-[16px] text-[#202124] leading-[1.75] mt-3">
+        <p className="font-bengali text-[16px] text-[#202124] dark:text-[#e8eaed] leading-[1.75] mt-3">
           {section.bengaliText}
         </p>
       )}
@@ -334,12 +334,12 @@ export default function PassageReader({ passage }: PassageReaderProps) {
     passage.difficulty.charAt(0) + passage.difficulty.slice(1).toLowerCase();
 
   return (
-    <div className="min-h-screen bg-white text-[#202124] pb-20 tap-highlight-transparent font-english">
+    <div className="min-h-screen bg-white dark:bg-[#131314] text-[#202124] dark:text-[#e8eaed] pb-20 tap-highlight-transparent font-english transition-colors duration-150">
       {/* Hairline Reading Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-transparent pointer-events-none">
         <div
           ref={progressBarRef}
-          className="h-full bg-[#1a73e8] will-change-[width]"
+          className="h-full bg-[#1a73e8] dark:bg-[#8ab4f8] will-change-[width]"
           style={{ width: "0%" }}
         />
       </div>
@@ -364,32 +364,34 @@ export default function PassageReader({ passage }: PassageReaderProps) {
         {/* Google-Style Editorial Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="flex items-center gap-1 text-[13px] font-medium text-[#1a73e8] mb-3.5 flex-wrap"
+          className="flex items-center gap-1 text-[13px] font-medium text-[#1a73e8] dark:text-[#8ab4f8] mb-3.5 flex-wrap"
         >
           <Link href="/" className="hover:underline">
             Home
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-[#5f6368]" />
-          <span className="text-[#1a73e8] truncate max-w-[200px]">
+          <ChevronRight className="w-3.5 h-3.5 text-[#5f6368] dark:text-[#9aa0a6]" />
+          <span className="text-[#1a73e8] dark:text-[#8ab4f8] truncate max-w-[200px]">
             {passage.category}
           </span>
-          <ChevronRight className="w-3.5 h-3.5 text-[#5f6368]" />
-          <span className="text-[#5f6368] font-normal">{difficultyLabel}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-[#5f6368] dark:text-[#9aa0a6]" />
+          <span className="text-[#5f6368] dark:text-[#9aa0a6] font-normal">
+            {difficultyLabel}
+          </span>
         </nav>
 
         {/* Clean Title Section */}
-        <header className="pb-5 mb-7 border-b border-[#dadce0]">
-          <h1 className="text-[28px] sm:text-[31px] font-normal tracking-[-0.015em] text-[#202124] leading-[1.24]">
+        <header className="pb-5 mb-7 border-b border-[#dadce0] dark:border-[#303134]">
+          <h1 className="text-[28px] sm:text-[31px] font-normal tracking-[-0.015em] text-[#202124] dark:text-[#e8eaed] leading-[1.24]">
             {passage.titleEn}
           </h1>
 
-          <h2 className="font-bengali text-[16.5px] font-normal text-[#5f6368] mt-2 leading-relaxed">
+          <h2 className="font-bengali text-[16.5px] font-normal text-[#5f6368] dark:text-[#9aa0a6] mt-2 leading-relaxed">
             {passage.titleBn}
           </h2>
 
           {/* Meta + Clean Controls Row */}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[13px] text-[#5f6368]">
+            <span className="text-[13px] text-[#5f6368] dark:text-[#9aa0a6]">
               {passage.readingTimeMinutes} min read
             </span>
 
@@ -397,10 +399,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={handleToggleBanglaPronunciation}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center active:scale-95 font-bengali ${
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center active:scale-95 font-bengali transition-colors ${
                   showBanglaPronunciation
-                    ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0]"
+                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
                 }`}
               >
                 <span>উচ্চারণ</span>
@@ -409,10 +411,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={handleRevealAll}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 active:scale-95 font-bengali ${
+                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 active:scale-95 font-bengali transition-colors ${
                   allRevealed
-                    ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0]"
+                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
                 }`}
               >
                 <Languages className="w-3.5 h-3.5" />
@@ -422,10 +424,10 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               <button
                 type="button"
                 onClick={toggleFullAudio}
-                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center active:scale-95 ${
+                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center active:scale-95 transition-colors ${
                   isPlayingFull
-                    ? "bg-[#e8f0fe] text-[#1967d2] border-[#d2e3fc]"
-                    : "bg-white text-[#3c4043] border-[#dadce0]"
+                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
                 }`}
                 aria-label={isPlayingFull ? "Stop reading" : "Listen to story"}
                 title={isPlayingFull ? "থামান" : "পুরো গল্প শুনুন"}
@@ -462,15 +464,17 @@ export default function PassageReader({ passage }: PassageReaderProps) {
               );
             })
           ) : (
-            <p className={`font-english ${fontSizeStyle} text-[#202124]`}>
+            <p
+              className={`font-english ${fontSizeStyle} text-[#202124] dark:text-[#e8eaed]`}
+            >
               {passage.englishContent}
             </p>
           )}
         </div>
 
         {/* Subtle Bottom Tip */}
-        <div className="mt-10 pt-5 border-t border-[#e8eaed] text-center">
-          <p className="font-bengali text-[13px] text-[#5f6368]">
+        <div className="mt-10 pt-5 border-t border-[#e8eaed] dark:border-[#303134] text-center">
+          <p className="font-bengali text-[13px] text-[#5f6368] dark:text-[#9aa0a6]">
             যেকোনো শব্দে ট্যাপ করে অর্থ ও পুরো বাক্যের অনুবাদ দেখুন · প্যারাগ্রাফে ট্যাপ করলে অনুবাদ খুলবে
           </p>
         </div>
@@ -494,25 +498,25 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       {showGlossaryDrawer && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div
-            className="fixed inset-0 bg-[#202124]/40"
+            className="fixed inset-0 bg-[#202124]/40 dark:bg-black/65"
             onClick={() => setShowGlossaryDrawer(false)}
           />
-          <div className="relative z-10 w-full max-w-lg mx-auto max-h-[78vh] flex flex-col rounded-t-3xl bg-white border-t border-[#e8eaed] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up text-[#202124]">
-            <div className="w-9 h-1 bg-[#dadce0] rounded-full mx-auto mb-3.5" />
+          <div className="relative z-10 w-full max-w-lg mx-auto max-h-[78vh] flex flex-col rounded-t-3xl bg-white dark:bg-[#1e1f20] border-t border-[#e8eaed] dark:border-[#303134] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] p-5 animate-slide-up text-[#202124] dark:text-[#e8eaed]">
+            <div className="w-9 h-1 bg-[#dadce0] dark:bg-[#3c4043] rounded-full mx-auto mb-3.5" />
 
-            <div className="flex items-center justify-between pb-3 border-b border-[#e8eaed]">
-              <h3 className="font-medium text-base text-[#202124] font-bengali">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e8eaed] dark:border-[#303134]">
+              <h3 className="font-medium text-base text-[#202124] dark:text-[#e8eaed] font-bengali">
                 গল্পের শব্দকোষ ({passage.vocabularies?.length || 0})
               </h3>
               <button
                 onClick={() => setShowGlossaryDrawer(false)}
-                className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] text-[#5f6368] text-sm"
+                className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#282a2c] text-[#5f6368] dark:text-[#9aa0a6] text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <div className="overflow-y-auto flex-1 divide-y divide-[#e8eaed] pr-1">
+            <div className="overflow-y-auto flex-1 divide-y divide-[#e8eaed] dark:divide-[#303134] pr-1">
               {passage.vocabularies?.map((v) => (
                 <div
                   key={v.id}
@@ -526,20 +530,20 @@ export default function PassageReader({ passage }: PassageReaderProps) {
                 >
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="font-medium text-[15.5px] text-[#202124] capitalize">
+                      <span className="font-medium text-[15.5px] text-[#202124] dark:text-[#e8eaed] capitalize">
                         {v.word}
                       </span>
                       {v.banglaPronunciation && (
-                        <span className="font-bengali text-xs text-[#5f6368]">
+                        <span className="font-bengali text-xs text-[#5f6368] dark:text-[#9aa0a6]">
                           {v.banglaPronunciation}
                         </span>
                       )}
                     </div>
-                    <div className="font-bengali text-[14.5px] text-[#3c4043] mt-0.5">
+                    <div className="font-bengali text-[14.5px] text-[#3c4043] dark:text-[#bdc1c6] mt-0.5">
                       {v.bengaliMeaning}
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#5f6368] shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] shrink-0" />
                 </div>
               ))}
             </div>

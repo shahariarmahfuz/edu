@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Hind_Siliguri } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -37,10 +38,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${hindSiliguri.variable} antialiased h-full`}
     >
-      <body className="min-h-full font-english bg-white text-[#202124] selection:bg-[#d2e3fc] selection:text-[#174ea6]">
-        {children}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("bhasha_theme");if(t==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-full font-english bg-white dark:bg-[#131314] text-[#202124] dark:text-[#e8eaed] selection:bg-[#d2e3fc] dark:selection:bg-[#1e3a5f] selection:text-[#174ea6] dark:selection:text-[#8ab4f8] transition-colors duration-150">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

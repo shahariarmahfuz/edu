@@ -13,8 +13,11 @@ import {
   Code,
   BookOpen,
   Volume2,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Difficulty } from "@/types/reading";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface SectionEntry {
   englishText: string;
@@ -36,6 +39,7 @@ interface VocabEntry {
 
 export default function UploadPage() {
   const [tab, setTab] = useState<"json" | "form">("json");
+  const { theme, toggleTheme } = useTheme();
 
   // Form State
   const [titleEn, setTitleEn] = useState("");
@@ -276,39 +280,53 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 font-sans">
-      {/* Mobile Top Header (Light Mode) */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#131314] text-slate-900 dark:text-[#e8eaed] pb-20 font-sans transition-colors duration-150">
+      {/* Mobile Top Header */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#303134]">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <Link
             href="/"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl hover:bg-slate-100 active:scale-95 transition-transform"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl hover:bg-slate-100 dark:hover:bg-[#282a2c] active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-700" />
+            <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-[#bdc1c6]" />
           </Link>
           <div className="text-center">
-            <h1 className="text-base font-bold text-slate-900">
+            <h1 className="text-base font-bold text-slate-900 dark:text-[#e8eaed]">
               নতুন প্যাসেজ যুক্ত করুন
             </h1>
-            <p className="text-[11px] text-slate-500 font-bengali">
+            <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] font-bengali">
               বাংলা উচ্চারণ ও অর্থ সহ JSON আপলোড
             </p>
           </div>
-          <div className="w-[44px]" />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl hover:bg-slate-100 dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] active:scale-95 transition-colors"
+            aria-label={
+              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+            }
+            title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <Sun className="w-[19px] h-[19px]" />
+            ) : (
+              <Moon className="w-[19px] h-[19px]" />
+            )}
+          </button>
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-4 pt-5">
         {/* Success Modal / Banner */}
         {successSlug && (
-          <div className="mb-6 p-4 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-3 shadow-xs">
+          <div className="mb-6 p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 space-y-3 shadow-xs">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span className="font-bold text-sm">
                 প্যাসেজটি সফলভাবে ডাটাবেজে সংরক্ষণ হয়েছে!
               </span>
             </div>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-emerald-200/80">
               প্যাসেজের বাক্য, বাংলা উচ্চারণ ও শব্দার্থ Neon PostgreSQL ডাটাবেজে যুক্ত হয়েছে।
             </p>
             <div className="flex gap-2 pt-1">
@@ -325,7 +343,7 @@ export default function UploadPage() {
                   setTitleEn("");
                   setTitleBn("");
                 }}
-                className="min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100"
+                className="min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#e8eaed] text-xs font-semibold hover:bg-slate-100 dark:hover:bg-[#282a2c]"
               >
                 আরেকটি যোগ করুন
               </button>
@@ -335,21 +353,21 @@ export default function UploadPage() {
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-2.5">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-200 flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div className="text-xs leading-relaxed font-medium">{errorMsg}</div>
           </div>
         )}
 
         {/* Mode Switcher Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-200/80 mb-5">
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-200/80 dark:bg-[#1e1f20] mb-5">
           <button
             type="button"
             onClick={() => setTab("json")}
             className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all ${
               tab === "json"
-                ? "bg-white text-indigo-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-[#282a2c] text-indigo-700 dark:text-[#8ab4f8] shadow-xs"
+                : "text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]"
             }`}
           >
             <Code className="w-4 h-4" />
@@ -360,8 +378,8 @@ export default function UploadPage() {
             onClick={() => setTab("form")}
             className={`min-h-[44px] rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all ${
               tab === "form"
-                ? "bg-white text-indigo-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-[#282a2c] text-indigo-700 dark:text-[#8ab4f8] shadow-xs"
+                : "text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -375,17 +393,17 @@ export default function UploadPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800 dark:text-[#e8eaed]">
                     JSON পেস্ট করুন
                   </label>
-                  <p className="text-[11px] text-slate-500 font-bengali">
+                  <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] font-bengali">
                     নিচের টেমপ্লেটটি এডিট করে সহজেই নতুন গল্প আপলোড করুন
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setJsonInput(sampleJson)}
-                  className="text-xs font-semibold text-indigo-600 hover:underline"
+                  className="text-xs font-semibold text-indigo-600 dark:text-[#8ab4f8] hover:underline"
                 >
                   টেমপ্লেট রিসেট
                 </button>
@@ -395,7 +413,7 @@ export default function UploadPage() {
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
                 rows={18}
-                className="w-full p-3.5 rounded-2xl bg-white border border-slate-300 font-mono text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-xs"
+                className="w-full p-3.5 rounded-2xl bg-white dark:bg-[#1e1f20] border border-slate-300 dark:border-[#3c4043] font-mono text-xs text-slate-800 dark:text-[#e8eaed] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:focus:ring-[#8ab4f8] shadow-xs"
                 placeholder="Paste valid JSON..."
               />
             </div>
@@ -404,7 +422,7 @@ export default function UploadPage() {
             <>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-[#bdc1c6] mb-1">
                     English Title *
                   </label>
                   <input
@@ -413,12 +431,12 @@ export default function UploadPage() {
                     value={titleEn}
                     onChange={(e) => setTitleEn(e.target.value)}
                     placeholder="e.g. The Honest Woodcutter"
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-300 dark:border-[#3c4043] text-sm text-slate-900 dark:text-[#e8eaed] placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:focus:ring-[#8ab4f8]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-[#bdc1c6] mb-1">
                     বাংলা শিরোনাম *
                   </label>
                   <input
@@ -427,20 +445,20 @@ export default function UploadPage() {
                     value={titleBn}
                     onChange={(e) => setTitleBn(e.target.value)}
                     placeholder="যেমন: সৎ কাঠুরিয়া"
-                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white border border-slate-300 font-bengali text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-300 dark:border-[#3c4043] font-bengali text-sm text-slate-900 dark:text-[#e8eaed] placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:focus:ring-[#8ab4f8]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-[#bdc1c6] mb-1">
                     ক্যাটাগরি
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-300 dark:border-[#3c4043] text-xs text-slate-800 dark:text-[#e8eaed] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:focus:ring-[#8ab4f8]"
                   >
                     <option value="Moral Story">Moral Story</option>
                     <option value="Science & Nature">Science & Nature</option>
@@ -451,13 +469,13 @@ export default function UploadPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-[#bdc1c6] mb-1">
                     লেভেল
                   </label>
                   <select
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                    className="w-full min-h-[44px] px-3 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-h-[44px] px-3 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-300 dark:border-[#3c4043] text-xs text-slate-800 dark:text-[#e8eaed] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:focus:ring-[#8ab4f8]"
                   >
                     <option value="BEGINNER">Beginner (সহজ)</option>
                     <option value="INTERMEDIATE">Intermediate (মধ্যম)</option>
@@ -467,20 +485,20 @@ export default function UploadPage() {
               </div>
 
               {/* Sections (Phrases with English + Bangla Pronunciation + Bengali Meaning) */}
-              <div className="pt-2 border-t border-slate-200">
+              <div className="pt-2 border-t border-slate-200 dark:border-[#303134]">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-[#e8eaed]">
                       প্যাসেজের বাক্যসমূহ (Phrases & Sentences)
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
                       প্রতিটি বাক্যের ইংরেজি, বাংলা উচ্চারণ ও বাংলা অর্থ দিন
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddSection}
-                    className="min-h-[40px] px-3 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold flex items-center gap-1 active:scale-95"
+                    className="min-h-[40px] px-3 rounded-xl bg-indigo-50 dark:bg-[#1e3a5f] text-indigo-700 dark:text-[#8ab4f8] border border-indigo-200 dark:border-[#2c4e7c] text-xs font-bold flex items-center gap-1 active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
                     বাক্য যোগ করুন
@@ -491,17 +509,17 @@ export default function UploadPage() {
                   {sections.map((sec, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2.5 shadow-2xs relative"
+                      className="p-4 rounded-2xl bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#303134] space-y-2.5 shadow-2xs relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-600 font-mono">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-[#8ab4f8] font-mono">
                           বাক্য #{idx + 1}
                         </span>
                         {sections.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveSection(idx)}
-                            className="text-slate-400 hover:text-rose-500"
+                            className="text-slate-400 dark:text-[#9aa0a6] hover:text-rose-500 dark:hover:text-rose-400"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -515,7 +533,7 @@ export default function UploadPage() {
                         onChange={(e) =>
                           handleSectionChange(idx, "englishText", e.target.value)
                         }
-                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-slate-50 dark:bg-[#131314] border border-slate-200 dark:border-[#3c4043] text-xs text-slate-900 dark:text-[#e8eaed] placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6]"
                       />
 
                       <input
@@ -529,7 +547,7 @@ export default function UploadPage() {
                             e.target.value
                           )
                         }
-                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-violet-50/50 border border-violet-200 font-bengali text-xs text-violet-950"
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-violet-50/50 dark:bg-violet-950/25 border border-violet-200 dark:border-violet-800/50 font-bengali text-xs text-violet-950 dark:text-violet-200 placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6]"
                       />
 
                       <input
@@ -539,7 +557,7 @@ export default function UploadPage() {
                         onChange={(e) =>
                           handleSectionChange(idx, "bengaliText", e.target.value)
                         }
-                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 font-bengali text-xs text-emerald-950"
+                        className="w-full min-h-[44px] px-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/50 font-bengali text-xs text-emerald-950 dark:text-emerald-200 placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6]"
                       />
                     </div>
                   ))}

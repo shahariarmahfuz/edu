@@ -1,22 +1,33 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark, .dark *));
+
 @layer base {
   :root {
     --font-english: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-bengali: "Hind Siliguri", "Noto Sans Bengali", sans-serif;
   }
-}
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-body {
-  background-color: #ffffff;
-  color: #202124;
-  font-family: var(--font-english), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #202124;
+    font-family: var(--font-english), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  html.dark body {
+    background-color: #131314;
+    color: #e8eaed;
+  }
 }
 
 .font-bengali {
@@ -47,6 +58,10 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(95, 99, 104, 0.25);
   border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(154, 160, 166, 0.35);
 }
 
 /* Mobile bottom sheet slide in (GPU-accelerated, zero jank) */
@@ -82,4 +97,10 @@ body {
 .clickable-word.is-active {
   background-color: #e8f0fe;
   color: #1967d2;
+}
+
+html.dark .clickable-word:active,
+html.dark .clickable-word.is-active {
+  background-color: rgba(138, 180, 248, 0.22);
+  color: #8ab4f8;
 }

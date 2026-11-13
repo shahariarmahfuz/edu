@@ -1,6 +1,6 @@
 export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
-export type ThemeMode = "light"; // Fixed to clean light mode as requested
+export type ThemeMode = "light" | "dark";
 
 export type FontSize = "sm" | "md" | "lg" | "xl";
 
