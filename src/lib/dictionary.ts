@@ -1,4 +1,5 @@
 import { VocabularyItem } from "@/types/reading";
+import { MAGI_DICTIONARY } from "./magiDictionary";
 
 // Built-in English-Bengali Dictionary for instant word lookups
 export const BUILTIN_DICTIONARY: Record<
@@ -13,6 +14,7 @@ export const BUILTIN_DICTIONARY: Record<
     exampleBn: string;
   }
 > = {
+  ...MAGI_DICTIONARY,
   once: {
     banglaPronunciation: "ওয়ান্স",
     bengaliMeaning: "একদা / এক সময়",
@@ -1477,8 +1479,8 @@ export const BUILTIN_DICTIONARY: Record<
 export function sanitizeWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/^[“"‘'(\[{<]+/g, "")
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()\]}">:]+$/g, "")
+    .replace(/^[“"‘'’(\[{<—–$-]+/g, "")
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()\]”"’'>?—–-]+$/g, "")
     .trim();
 }
 
@@ -1488,17 +1490,28 @@ export function lookupWord(
   passageVocabList: VocabularyItem[] = []
 ): VocabularyItem {
   const clean = sanitizeWord(rawWord);
-  const baseNoPossessive = clean.replace(/['’]s$/, "");
+  const baseNoPossessive = clean
+    .replace(/['’]s$/, "")
+    .replace(/s['’]$/, "s");
+  const asciiClean = clean.replace(/’/g, "'");
+  const asciiBase = baseNoPossessive.replace(/’/g, "'");
 
-  // 1. Check if the passage has a direct vocabulary definition
-  const passageMatch = passageVocabList.find(
-    (v) =>
-      sanitizeWord(v.word) === clean ||
-      sanitizeWord(v.word) === baseNoPossessive ||
-      (v.cleanWord &&
-        (sanitizeWord(v.cleanWord) === clean ||
-          sanitizeWord(v.cleanWord) === baseNoPossessive))
-  );
+  const displayWord = rawWord
+    .replace(/^[“"‘'(\[{<—–]+|[.,/#!$%^&*;:{}=\-_`~()\]”"}>?—–]+$/g, "")
+    .trim();
+
+  // 1. Check if the passage has a direct single-word vocabulary definition
+  const passageMatch = passageVocabList.find((v) => {
+    if (v.word.trim().includes(" ")) return false;
+    const vw = sanitizeWord(v.word);
+    const vc = v.cleanWord ? sanitizeWord(v.cleanWord) : "";
+    return (
+      vw === clean ||
+      vw === baseNoPossessive ||
+      vc === clean ||
+      vc === baseNoPossessive
+    );
+  });
 
   if (passageMatch) {
     return {
@@ -1507,33 +1520,73 @@ export function lookupWord(
     };
   }
 
-  // 2. Check the built-in dictionary (exact or without possessive 's)
-  const dictMatch =
-    BUILTIN_DICTIONARY[clean] || BUILTIN_DICTIONARY[baseNoPossessive];
-  if (dictMatch) {
+  // 2. Check the built-in dictionary (exact, possessive-stripped, or stem/hyphen/dash candidates)
+  const candidates = [
+    clean,
+    baseNoPossessive,
+    asciiClean,
+    asciiBase,
+    baseNoPossessive.replace(/ies$/, "y"),
+    baseNoPossessive.replace(/ied$/, "y"),
+    baseNoPossessive.replace(/es$/, ""),
+    baseNoPossessive.replace(/s$/, ""),
+    baseNoPossessive.replace(/ed$/, ""),
+    baseNoPossessive.replace(/ed$/, "e"),
+    baseNoPossessive.replace(/ing$/, ""),
+    baseNoPossessive.replace(/ing$/, "e"),
+    baseNoPossessive.replace(/ly$/, ""),
+    ...(baseNoPossessive.includes("-") ? baseNoPossessive.split("-") : []),
+    ...(baseNoPossessive.includes("—") ? baseNoPossessive.split("—") : []),
+    ...(baseNoPossessive.includes("–") ? baseNoPossessive.split("–") : []),
+  ];
+
+  for (const cand of candidates) {
+    if (cand && BUILTIN_DICTIONARY[cand]) {
+      const dictMatch = BUILTIN_DICTIONARY[cand];
+      return {
+        id: `builtin-${clean}`,
+        word: displayWord || clean,
+        cleanWord: clean,
+        banglaPronunciation: dictMatch.banglaPronunciation,
+        bengaliMeaning: dictMatch.bengaliMeaning,
+        phonetic: dictMatch.phonetic,
+        partOfSpeech: dictMatch.partOfSpeech,
+        englishDefinition: dictMatch.definition,
+        exampleSentenceEn: dictMatch.exampleEn,
+        exampleSentenceBn: dictMatch.exampleBn,
+      };
+    }
+  }
+
+  // 3. Handle numeric / currency values gracefully
+  if (/^\$?\d+([.,–-]\d+)?$/.test(displayWord) || /^\d+$/.test(clean)) {
+    const isDollar = rawWord.trim().startsWith("$");
     return {
-      id: `builtin-${clean}`,
-      word: rawWord.replace(/^[“"‘'(\[{<]+|[.,/#!$%^&*;:{}=\-_`~()\]}">:]+$/g, ""),
+      id: `num-${clean}`,
+      word: displayWord || rawWord,
       cleanWord: clean,
-      banglaPronunciation: dictMatch.banglaPronunciation,
-      bengaliMeaning: dictMatch.bengaliMeaning,
-      phonetic: dictMatch.phonetic,
-      partOfSpeech: dictMatch.partOfSpeech,
-      englishDefinition: dictMatch.definition,
-      exampleSentenceEn: dictMatch.exampleEn,
-      exampleSentenceBn: dictMatch.exampleBn,
+      banglaPronunciation: isDollar ? `${clean} ডলার` : clean,
+      bengaliMeaning: isDollar
+        ? `${displayWord} (মার্কিন ডলার পরিমাণ)`
+        : `সংখ্যা বা সাল (${displayWord})`,
+      phonetic: `/${displayWord}/`,
+      partOfSpeech: "number",
+      englishDefinition: isDollar
+        ? `Monetary amount of ${displayWord} in United States dollars.`
+        : `Numeric value or year (${displayWord}) mentioned in the text.`,
+      exampleSentenceEn: `The figure ${displayWord} appears in this passage.`,
+      exampleSentenceBn: `এই অংশে ${displayWord} সংখ্যাটি উল্লেখ করা হয়েছে।`,
     };
   }
 
-  // 3. Fallback for any other English word:
-  // Provide clean audio pronunciation and contextual lookup
+  // 4. Fallback for any other word
   const capitalized = clean.charAt(0).toUpperCase() + clean.slice(1);
 
   return {
     id: `fallback-${clean}`,
-    word: rawWord.replace(/^[“"‘'(\[{<]+|[.,/#!$%^&*;:{}=\-_`~()\]}">]+$/g, ""),
+    word: displayWord || capitalized,
     cleanWord: clean,
-    banglaPronunciation: clean, // Audio Web Speech API will pronounce it
+    banglaPronunciation: clean,
     bengaliMeaning: `শব্দটির অর্থ জানতে উপরের উচ্চারণ শুনুন বা ডিকশনারিতে দেখুন`,
     phonetic: `/${clean}/`,
     partOfSpeech: "word",

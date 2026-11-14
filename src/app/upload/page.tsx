@@ -16,10 +16,11 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
-import { Difficulty } from "@/types/reading";
+import { Difficulty, SectionType } from "@/types/reading";
 import { useTheme } from "@/components/ThemeProvider";
 
 interface SectionEntry {
+  sectionType: SectionType;
   englishText: string;
   banglaPronunciation: string;
   bengaliText: string;
@@ -52,6 +53,7 @@ export default function UploadPage() {
 
   const [sections, setSections] = useState<SectionEntry[]>([
     {
+      sectionType: "story",
       englishText: "",
       banglaPronunciation: "",
       bengaliText: "",
@@ -158,7 +160,12 @@ export default function UploadPage() {
   const handleAddSection = () => {
     setSections((prev) => [
       ...prev,
-      { englishText: "", banglaPronunciation: "", bengaliText: "" },
+      {
+        sectionType: "story",
+        englishText: "",
+        banglaPronunciation: "",
+        bengaliText: "",
+      },
     ]);
   };
 
@@ -251,6 +258,7 @@ export default function UploadPage() {
           summaryBn,
           sections: validSections.map((s, idx) => ({
             orderIndex: idx,
+            sectionType: s.sectionType || "story",
             englishText: s.englishText.trim(),
             banglaPronunciation: s.banglaPronunciation.trim(),
             bengaliText: s.bengaliText.trim(),
@@ -511,19 +519,37 @@ export default function UploadPage() {
                       key={idx}
                       className="p-4 rounded-2xl bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#303134] space-y-2.5 shadow-2xs relative"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-indigo-600 dark:text-[#8ab4f8] font-mono">
-                          বাক্য #{idx + 1}
+                          প্যারাগ্রাফ #{idx + 1}
                         </span>
-                        {sections.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSection(idx)}
-                            className="text-slate-400 dark:text-[#9aa0a6] hover:text-rose-500 dark:hover:text-rose-400"
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={sec.sectionType}
+                            onChange={(e) =>
+                              handleSectionChange(
+                                idx,
+                                "sectionType",
+                                e.target.value
+                              )
+                            }
+                            className="h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] text-[11px] font-bengali text-slate-700 dark:text-[#bdc1c6]"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                            <option value="story">📖 মূল গল্প (Story)</option>
+                            <option value="author">✍️ লেখক পরিচিতি (Author)</option>
+                            <option value="introduction">💡 ভূমিকা (Intro)</option>
+                            <option value="summary">📝 সামারি (Summary)</option>
+                          </select>
+                          {sections.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSection(idx)}
+                              className="text-slate-400 dark:text-[#9aa0a6] hover:text-rose-500 dark:hover:text-rose-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <input

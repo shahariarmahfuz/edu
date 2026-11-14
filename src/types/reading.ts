@@ -20,10 +20,13 @@ export interface VocabularyItem {
   exampleSentenceBn?: string | null;
 }
 
+export type SectionType = "story" | "author" | "introduction" | "summary";
+
 export interface SentenceItem {
   en: string;
   bnPronounce?: string | null;
   bn: string;
+  sectionType?: SectionType;
 }
 
 export interface PassageSectionItem {

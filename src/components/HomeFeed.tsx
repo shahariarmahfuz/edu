@@ -256,39 +256,77 @@ export default function HomeFeed({
           ) : (
             filteredPassages.map((passage) => {
               return (
-                <Link
+                <div
                   key={passage.id}
-                  href={`/read/${passage.slug}`}
-                  className="group block py-6 transition-colors active:opacity-75"
+                  className="py-6 transition-colors"
                 >
-                  {/* Clean Meta Eyebrow */}
-                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] text-[#5f6368] dark:text-[#9aa0a6] mb-2">
-                    <span className="font-medium text-[#1a73e8] dark:text-[#8ab4f8]">
-                      {passage.category}
-                    </span>
-                    <span>·</span>
-                    <span>{difficultyLabels[passage.difficulty]}</span>
-                    <span>·</span>
-                    <span>{passage.readingTimeMinutes} min read</span>
-                  </div>
+                  <Link
+                    href={`/read/${passage.slug}`}
+                    className="group block active:opacity-75"
+                  >
+                    {/* Clean Meta Eyebrow */}
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] text-[#5f6368] dark:text-[#9aa0a6] mb-2">
+                      <span className="font-medium text-[#1a73e8] dark:text-[#8ab4f8]">
+                        {passage.category}
+                      </span>
+                      <span>·</span>
+                      <span>{difficultyLabels[passage.difficulty]}</span>
+                      <span>·</span>
+                      <span>{passage.readingTimeMinutes} min read</span>
+                    </div>
 
-                  {/* Clean Readable English Headline */}
-                  <h2 className="text-[21px] font-normal tracking-[-0.01em] text-[#202124] dark:text-[#e8eaed] group-hover:text-[#1a73e8] dark:group-hover:text-[#8ab4f8] leading-[1.3] transition-colors">
-                    {passage.titleEn}
-                  </h2>
+                    {/* Clean Readable English Headline */}
+                    <h2 className="text-[21px] font-normal tracking-[-0.01em] text-[#202124] dark:text-[#e8eaed] group-hover:text-[#1a73e8] dark:group-hover:text-[#8ab4f8] leading-[1.3] transition-colors">
+                      {passage.titleEn}
+                    </h2>
 
-                  {/* Clear Bengali Title */}
-                  <p className="font-bengali text-[15.5px] font-normal text-[#3c4043] dark:text-[#bdc1c6] mt-1 leading-relaxed">
-                    {passage.titleBn}
-                  </p>
-
-                  {/* Crisp High-Contrast Summary */}
-                  {passage.summaryEn && (
-                    <p className="text-[15px] text-[#5f6368] dark:text-[#9aa0a6] mt-2.5 line-clamp-2 leading-[1.6]">
-                      {passage.summaryEn}
+                    {/* Clear Bengali Title */}
+                    <p className="font-bengali text-[15.5px] font-normal text-[#3c4043] dark:text-[#bdc1c6] mt-1 leading-relaxed">
+                      {passage.titleBn}
                     </p>
-                  )}
-                </Link>
+
+                    {/* Crisp High-Contrast Summary */}
+                    {passage.summaryEn && (
+                      <p className="text-[15px] text-[#5f6368] dark:text-[#9aa0a6] mt-2.5 line-clamp-2 leading-[1.6]">
+                        {passage.summaryEn}
+                      </p>
+                    )}
+                  </Link>
+
+                  {/* Strategic Study Quick-Jump Pills */}
+                  <div className="mt-3.5 flex flex-wrap items-center gap-1.5 font-bengali">
+                    <Link
+                      href={`/read/${passage.slug}?tab=story`}
+                      className="px-2.5 py-1 rounded-full text-[12px] font-medium bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] hover:opacity-90 transition-opacity"
+                    >
+                      📖 মূল গল্প
+                    </Link>
+                    <Link
+                      href={`/read/${passage.slug}?tab=author`}
+                      className="px-2.5 py-1 rounded-full text-[12px] font-medium bg-[#f1f3f4] dark:bg-[#282a2c] text-[#3c4043] dark:text-[#bdc1c6] hover:bg-[#e8f0fe] dark:hover:bg-[#1e3a5f] hover:text-[#1967d2] dark:hover:text-[#8ab4f8] transition-colors"
+                    >
+                      ✍️ লেখক পরিচিতি
+                    </Link>
+                    <Link
+                      href={`/read/${passage.slug}?tab=introduction`}
+                      className="px-2.5 py-1 rounded-full text-[12px] font-medium bg-[#f1f3f4] dark:bg-[#282a2c] text-[#3c4043] dark:text-[#bdc1c6] hover:bg-[#e8f0fe] dark:hover:bg-[#1e3a5f] hover:text-[#1967d2] dark:hover:text-[#8ab4f8] transition-colors"
+                    >
+                      💡 ভূমিকা
+                    </Link>
+                    <Link
+                      href={`/read/${passage.slug}?tab=summary`}
+                      className="px-2.5 py-1 rounded-full text-[12px] font-medium bg-[#f1f3f4] dark:bg-[#282a2c] text-[#3c4043] dark:text-[#bdc1c6] hover:bg-[#e8f0fe] dark:hover:bg-[#1e3a5f] hover:text-[#1967d2] dark:hover:text-[#8ab4f8] transition-colors"
+                    >
+                      📝 সামারি
+                    </Link>
+                    <Link
+                      href={`/read/${passage.slug}?tab=notes`}
+                      className="px-2.5 py-1 rounded-full text-[12px] font-medium bg-[#f1f3f4] dark:bg-[#282a2c] text-[#3c4043] dark:text-[#bdc1c6] hover:bg-[#e8f0fe] dark:hover:bg-[#1e3a5f] hover:text-[#1967d2] dark:hover:text-[#8ab4f8] transition-colors"
+                    >
+                      📚 শব্দার্থ ({passage._count.vocabularies})
+                    </Link>
+                  </div>
+                </div>
               );
             })
           )}

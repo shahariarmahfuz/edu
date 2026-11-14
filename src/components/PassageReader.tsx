@@ -14,6 +14,7 @@ import {
   VocabularyItem,
   PassageSectionItem,
   SentenceItem,
+  SectionType,
   FontSize,
   ReadingMode,
 } from "@/types/reading";
@@ -21,7 +22,33 @@ import ReaderHeader from "./ReaderHeader";
 import VocabularyBottomSheet from "./VocabularyBottomSheet";
 import { lookupWord, sanitizeWord } from "@/lib/dictionary";
 import { extractSentencesFromSection } from "@/lib/sentenceSplitter";
-import { Languages, Volume2, ChevronRight } from "lucide-react";
+import {
+  Languages,
+  Volume2,
+  ChevronRight,
+  BookOpen,
+  UserCheck,
+  Lightbulb,
+  FileText,
+  BookA,
+} from "lucide-react";
+
+type StudyTab = SectionType | "notes";
+
+function getSectionType(section: PassageSectionItem): SectionType {
+  if (Array.isArray(section.sentences) && section.sentences.length > 0) {
+    const first = section.sentences[0] as SentenceItem;
+    if (
+      first.sectionType === "author" ||
+      first.sectionType === "introduction" ||
+      first.sectionType === "summary" ||
+      first.sectionType === "story"
+    ) {
+      return first.sectionType;
+    }
+  }
+  return "story";
+}
 
 interface PassageReaderProps {
   passage: PassageItem;
@@ -144,6 +171,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
   const [readingMode, setReadingMode] = useState<ReadingMode>("tap-to-reveal");
   const [showBanglaPronunciation, setShowBanglaPronunciation] =
     useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<StudyTab>("story");
 
   const [revealedSectionIds, setRevealedSectionIds] = useState<Set<string>>(
     new Set()
@@ -166,6 +194,81 @@ export default function PassageReader({ passage }: PassageReaderProps) {
   const [isPlayingFull, setIsPlayingFull] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
+  const groupedSections = useMemo(() => {
+    const groups: Record<SectionType, PassageSectionItem[]> = {
+      story: [],
+      author: [],
+      introduction: [],
+      summary: [],
+    };
+    for (const sec of passage.sections || []) {
+      const t = getSectionType(sec);
+      groups[t].push(sec);
+    }
+    return groups;
+  }, [passage.sections]);
+
+  const availableTabs = useMemo(() => {
+    const tabs: Array<{
+      id: StudyTab;
+      labelBn: string;
+      labelEn: string;
+      count: number;
+      icon: React.ReactNode;
+    }> = [
+      {
+        id: "story",
+        labelBn: "মূল গল্প",
+        labelEn: "The Story",
+        count: groupedSections.story.length,
+        icon: <BookOpen className="w-3.5 h-3.5" />,
+      },
+    ];
+    if (groupedSections.author.length > 0) {
+      tabs.push({
+        id: "author",
+        labelBn: "লেখক পরিচিতি",
+        labelEn: "About the Author",
+        count: groupedSections.author.length,
+        icon: <UserCheck className="w-3.5 h-3.5" />,
+      });
+    }
+    if (groupedSections.introduction.length > 0) {
+      tabs.push({
+        id: "introduction",
+        labelBn: "ভূমিকা",
+        labelEn: "Introduction",
+        count: groupedSections.introduction.length,
+        icon: <Lightbulb className="w-3.5 h-3.5" />,
+      });
+    }
+    if (groupedSections.summary.length > 0) {
+      tabs.push({
+        id: "summary",
+        labelBn: "সামারি",
+        labelEn: "Critical Summary",
+        count: groupedSections.summary.length,
+        icon: <FileText className="w-3.5 h-3.5" />,
+      });
+    }
+    if ((passage.vocabularies?.length || 0) > 0) {
+      tabs.push({
+        id: "notes",
+        labelBn: "শব্দার্থ ও টীকা",
+        labelEn: "Word Notes & Allusions",
+        count: passage.vocabularies.length,
+        icon: <BookA className="w-3.5 h-3.5" />,
+      });
+    }
+    return tabs;
+  }, [groupedSections, passage.vocabularies]);
+
+  const activeSections = useMemo(() => {
+    if (activeTab === "notes") return [];
+    const list = groupedSections[activeTab];
+    return list.length > 0 ? list : groupedSections.story;
+  }, [activeTab, groupedSections]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedFontSize = localStorage.getItem(
@@ -181,8 +284,33 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       if (savedPronounce !== null) {
         setShowBanglaPronunciation(savedPronounce === "true");
       }
+
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as StudyTab | null;
+      if (
+        tabParam &&
+        ["story", "author", "introduction", "summary", "notes"].includes(
+          tabParam
+        )
+      ) {
+        setActiveTab(tabParam);
+      }
     }
   }, []);
+
+  const handleSelectTab = (tab: StudyTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        setIsPlayingFull(false);
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -262,8 +390,8 @@ export default function PassageReader({ passage }: PassageReaderProps) {
 
   const allRevealed =
     readingMode === "parallel" ||
-    (passage.sections.length > 0 &&
-      revealedSectionIds.size === passage.sections.length);
+    (activeSections.length > 0 &&
+      activeSections.every((s) => revealedSectionIds.has(s.id)));
 
   const handleRevealAll = () => {
     if (readingMode === "parallel") {
@@ -272,10 +400,21 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       return;
     }
 
-    if (revealedSectionIds.size === passage.sections.length) {
-      setRevealedSectionIds(new Set());
+    if (
+      activeSections.length > 0 &&
+      activeSections.every((s) => revealedSectionIds.has(s.id))
+    ) {
+      setRevealedSectionIds((prev) => {
+        const next = new Set(prev);
+        for (const s of activeSections) next.delete(s.id);
+        return next;
+      });
     } else {
-      setRevealedSectionIds(new Set(passage.sections.map((s) => s.id)));
+      setRevealedSectionIds((prev) => {
+        const next = new Set(prev);
+        for (const s of activeSections) next.add(s.id);
+        return next;
+      });
     }
   };
 
@@ -287,8 +426,8 @@ export default function PassageReader({ passage }: PassageReaderProps) {
       return;
     }
     const textToRead =
-      passage.sections && passage.sections.length > 0
-        ? passage.sections.map((s) => s.englishText).join(" ")
+      activeSections && activeSections.length > 0
+        ? activeSections.map((s) => s.englishText).join(" ")
         : passage.englishContent;
 
     window.speechSynthesis.cancel();
@@ -332,6 +471,14 @@ export default function PassageReader({ passage }: PassageReaderProps) {
 
   const difficultyLabel =
     passage.difficulty.charAt(0) + passage.difficulty.slice(1).toLowerCase();
+
+  const currentTabMeta =
+    availableTabs.find((t) => t.id === activeTab) || availableTabs[0];
+  const currentTabIndex = availableTabs.findIndex((t) => t.id === activeTab);
+  const nextTabMeta =
+    currentTabIndex >= 0 && currentTabIndex + 1 < availableTabs.length
+      ? availableTabs[currentTabIndex + 1]
+      : null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#131314] text-[#202124] dark:text-[#e8eaed] pb-20 tap-highlight-transparent font-english transition-colors duration-150">
@@ -380,7 +527,7 @@ export default function PassageReader({ passage }: PassageReaderProps) {
         </nav>
 
         {/* Clean Title Section */}
-        <header className="pb-5 mb-7 border-b border-[#dadce0] dark:border-[#303134]">
+        <header className="pb-5 mb-6 border-b border-[#dadce0] dark:border-[#303134]">
           <h1 className="text-[28px] sm:text-[31px] font-normal tracking-[-0.015em] text-[#202124] dark:text-[#e8eaed] leading-[1.24]">
             {passage.titleEn}
           </h1>
@@ -389,88 +536,211 @@ export default function PassageReader({ passage }: PassageReaderProps) {
             {passage.titleBn}
           </h2>
 
+          {/* Strategic Study Navigation Bar */}
+          {availableTabs.length > 1 && (
+            <div className="mt-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 min-w-max pb-1">
+                {availableTabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleSelectTab(tab.id)}
+                      className={`min-h-[36px] px-3 rounded-full text-[13px] font-medium flex items-center gap-1.5 border transition-colors font-bengali active:scale-95 ${
+                        isActive
+                          ? "bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#131314] border-[#1a73e8] dark:border-[#8ab4f8]"
+                          : "bg-[#f8f9fa] dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043] hover:bg-[#e8f0fe]/60 dark:hover:bg-[#282a2c]"
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.labelBn}</span>
+                      <span
+                        className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                          isActive
+                            ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#131314]"
+                            : "bg-[#e8eaed] dark:bg-[#303134] text-[#5f6368] dark:text-[#9aa0a6]"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Meta + Clean Controls Row */}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[13px] text-[#5f6368] dark:text-[#9aa0a6]">
-              {passage.readingTimeMinutes} min read
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[13px] text-[#5f6368] dark:text-[#9aa0a6] font-bengali">
+              {currentTabMeta.labelBn} · {currentTabMeta.labelEn}
             </span>
 
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleToggleBanglaPronunciation}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center active:scale-95 font-bengali transition-colors ${
-                  showBanglaPronunciation
-                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
-                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
-                }`}
-              >
-                <span>উচ্চারণ</span>
-              </button>
+            {activeTab !== "notes" && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleToggleBanglaPronunciation}
+                  className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center active:scale-95 font-bengali transition-colors ${
+                    showBanglaPronunciation
+                      ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                      : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
+                  }`}
+                >
+                  <span>উচ্চারণ</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={handleRevealAll}
-                className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 active:scale-95 font-bengali transition-colors ${
-                  allRevealed
-                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
-                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
-                }`}
-              >
-                <Languages className="w-3.5 h-3.5" />
-                <span>{allRevealed ? "অনুবাদ লুকান" : "বাংলা অর্থ"}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={handleRevealAll}
+                  className={`min-h-[32px] px-2.5 rounded-full text-[12px] font-medium border flex items-center gap-1 active:scale-95 font-bengali transition-colors ${
+                    allRevealed
+                      ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                      : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
+                  }`}
+                >
+                  <Languages className="w-3.5 h-3.5" />
+                  <span>{allRevealed ? "অনুবাদ লুকান" : "বাংলা অর্থ"}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={toggleFullAudio}
-                className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center active:scale-95 transition-colors ${
-                  isPlayingFull
-                    ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
-                    : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
-                }`}
-                aria-label={isPlayingFull ? "Stop reading" : "Listen to story"}
-                title={isPlayingFull ? "থামান" : "পুরো গল্প শুনুন"}
-              >
-                <Volume2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={toggleFullAudio}
+                  className={`min-w-[32px] min-h-[32px] px-2 rounded-full border flex items-center justify-center active:scale-95 transition-colors ${
+                    isPlayingFull
+                      ? "bg-[#e8f0fe] dark:bg-[#1e3a5f] text-[#1967d2] dark:text-[#8ab4f8] border-[#d2e3fc] dark:border-[#2c4e7c]"
+                      : "bg-white dark:bg-[#1e1f20] text-[#3c4043] dark:text-[#bdc1c6] border-[#dadce0] dark:border-[#3c4043]"
+                  }`}
+                  aria-label={isPlayingFull ? "Stop reading" : "Listen to section"}
+                  title={isPlayingFull ? "থামান" : "অডিও শুনুন"}
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* Clean Article Body — Uninterrupted Editorial Prose */}
-        <div className="space-y-8">
-          {passage.sections && passage.sections.length > 0 ? (
-            passage.sections.map((section: PassageSectionItem) => {
-              const isRevealed =
-                readingMode === "parallel" || revealedSectionIds.has(section.id);
-              const activeKeyForSection =
-                activeTarget?.sectionId === section.id
-                  ? activeTarget.wordKey
-                  : null;
+        {/* Clean Article Body or Word Notes View */}
+        {activeTab === "notes" ? (
+          <div className="divide-y divide-[#e8eaed] dark:divide-[#303134]">
+            {passage.vocabularies?.map((v) => (
+              <div
+                key={v.id}
+                onClick={() => {
+                  setActiveVocab(v);
+                  setActiveSentence(null);
+                  setSheetInitialTab("word");
+                }}
+                className="py-4 cursor-pointer hover:bg-[#f8f9fa]/60 dark:hover:bg-[#1e1f20]/60 transition-colors"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-[17px] font-medium text-[#1a73e8] dark:text-[#8ab4f8]">
+                      {v.word}
+                    </span>
+                    {v.phonetic && (
+                      <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                        {v.phonetic}
+                      </span>
+                    )}
+                    {v.banglaPronunciation && (
+                      <span className="font-bengali text-[13.5px] text-[#5f6368] dark:text-[#9aa0a6]">
+                        ({v.banglaPronunciation})
+                      </span>
+                    )}
+                  </div>
+                  {v.partOfSpeech && (
+                    <span className="text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#f1f3f4] dark:bg-[#282a2c] text-[#5f6368] dark:text-[#9aa0a6]">
+                      {v.partOfSpeech}
+                    </span>
+                  )}
+                </div>
 
-              return (
-                <PassageParagraphBlock
-                  key={section.id}
-                  section={section}
-                  fontSizeStyle={fontSizeStyle}
-                  showBanglaPronunciation={showBanglaPronunciation}
-                  isRevealed={isRevealed}
-                  tapToRevealEnabled={readingMode === "tap-to-reveal"}
-                  activeWordKeyInSection={activeKeyForSection}
-                  onToggleSection={toggleSectionReveal}
-                  onWordSelect={handleWordSelect}
-                />
-              );
-            })
-          ) : (
-            <p
-              className={`font-english ${fontSizeStyle} text-[#202124] dark:text-[#e8eaed]`}
+                <p className="font-bengali text-[15.5px] font-medium text-[#202124] dark:text-[#e8eaed] mt-1.5 leading-relaxed">
+                  {v.bengaliMeaning}
+                </p>
+
+                {v.englishDefinition && (
+                  <p className="text-[14.5px] text-[#3c4043] dark:text-[#bdc1c6] mt-1 leading-relaxed">
+                    {v.englishDefinition}
+                  </p>
+                )}
+
+                {v.exampleSentenceEn && (
+                  <div className="mt-2 pl-3 border-l-2 border-[#dadce0] dark:border-[#3c4043] space-y-0.5">
+                    <p className="text-[13.5px] italic text-[#5f6368] dark:text-[#9aa0a6]">
+                      “{v.exampleSentenceEn}”
+                    </p>
+                    {v.exampleSentenceBn && (
+                      <p className="font-bengali text-[13.5px] text-[#5f6368] dark:text-[#9aa0a6]">
+                        {v.exampleSentenceBn}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {activeSections && activeSections.length > 0 ? (
+              activeSections.map((section: PassageSectionItem) => {
+                const isRevealed =
+                  readingMode === "parallel" || revealedSectionIds.has(section.id);
+                const activeKeyForSection =
+                  activeTarget?.sectionId === section.id
+                    ? activeTarget.wordKey
+                    : null;
+
+                return (
+                  <PassageParagraphBlock
+                    key={section.id}
+                    section={section}
+                    fontSizeStyle={fontSizeStyle}
+                    showBanglaPronunciation={showBanglaPronunciation}
+                    isRevealed={isRevealed}
+                    tapToRevealEnabled={readingMode === "tap-to-reveal"}
+                    activeWordKeyInSection={activeKeyForSection}
+                    onToggleSection={toggleSectionReveal}
+                    onWordSelect={handleWordSelect}
+                  />
+                );
+              })
+            ) : (
+              <p
+                className={`font-english ${fontSizeStyle} text-[#202124] dark:text-[#e8eaed]`}
+              >
+                {passage.englishContent}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Next Study Step CTA */}
+        {nextTabMeta && (
+          <div className="mt-10 pt-6 border-t border-[#e8eaed] dark:border-[#303134]">
+            <button
+              type="button"
+              onClick={() => handleSelectTab(nextTabMeta.id)}
+              className="w-full min-h-[48px] px-4 py-3 rounded-2xl bg-[#f8f9fa] dark:bg-[#1e1f20] hover:bg-[#e8f0fe]/70 dark:hover:bg-[#282a2c] border border-[#dadce0] dark:border-[#3c4043] flex items-center justify-between gap-3 transition-colors font-bengali"
             >
-              {passage.englishContent}
-            </p>
-          )}
-        </div>
+              <div className="text-left">
+                <div className="text-[12px] text-[#5f6368] dark:text-[#9aa0a6]">
+                  পরবর্তী অধ্যয়ন ধাপ (Next Section)
+                </div>
+                <div className="text-[15px] font-medium text-[#1a73e8] dark:text-[#8ab4f8] flex items-center gap-1.5 mt-0.5">
+                  {nextTabMeta.icon}
+                  <span>
+                    {nextTabMeta.labelBn} · {nextTabMeta.labelEn} ({nextTabMeta.count})
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" />
+            </button>
+          </div>
+        )}
 
         {/* Subtle Bottom Tip */}
         <div className="mt-10 pt-5 border-t border-[#e8eaed] dark:border-[#303134] text-center">

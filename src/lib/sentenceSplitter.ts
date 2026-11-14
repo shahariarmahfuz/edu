@@ -1,5 +1,23 @@
 import { PassageSectionItem, SentenceItem } from "@/types/reading";
 
+function splitEnSmart(text: string): string[] {
+  const protectedText = text
+    .replace(/\b(Mr|Mrs|Mme|Ms|Dr|Prof|St|Jr|Sr|O|J|U\.S\.A|B\.C)\./g, "$1\u0000")
+    .replace(/([A-Z])\.\s*([A-Z])\./g, "$1\u0000 $2\u0000");
+  return protectedText
+    .split(/(?<=[.!?]["”'’)]?)\s+/)
+    .map((s) => s.replace(/\u0000/g, ".").trim())
+    .filter(Boolean);
+}
+
+function splitBnSmart(text: string): string[] {
+  const protectedText = text.replace(/(আ|মি|মিসেস|ড)\./g, "$1\u0000");
+  return protectedText
+    .split(/(?<=[।!?]["”'’)]?)\s+/)
+    .map((s) => s.replace(/\u0000/g, ".").trim())
+    .filter(Boolean);
+}
+
 /**
  * Splits a PassageSection into individual sentences with aligned English,
  * Bengali pronunciation, and Bengali translation.
@@ -14,10 +32,7 @@ export function extractSentencesFromSection(
     return section.sentences;
   }
 
-  const enSentences = section.englishText
-    .split(/(?<=[.!?]["”']?)\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const enSentences = splitEnSmart(section.englishText);
 
   if (enSentences.length <= 1) {
     return [
@@ -30,17 +45,11 @@ export function extractSentencesFromSection(
   }
 
   const bnPronounceSentences = section.banglaPronunciation
-    ? section.banglaPronunciation
-        .split(/(?<=[।.!?]["”']?)\s+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
+    ? splitBnSmart(section.banglaPronunciation)
     : [];
 
   const bnSentences = section.bengaliText
-    ? section.bengaliText
-        .split(/(?<=[।.!?]["”']?)\s+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
+    ? splitBnSmart(section.bengaliText)
     : [];
 
   const canAlignBn = bnSentences.length === enSentences.length;

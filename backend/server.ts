@@ -249,17 +249,44 @@ async function handleRequest(
       }> = [];
 
       if (sections && sections.length > 0) {
-        sectionsData = sections.map((sec, idx) => ({
-          orderIndex:
-            typeof sec.orderIndex === "number" ? sec.orderIndex : idx,
-          englishText: String(sec.englishText || "").trim(),
-          banglaPronunciation:
+        sectionsData = sections.map((sec, idx) => {
+          const enText = String(sec.englishText || "").trim();
+          const bnPron =
             typeof sec.banglaPronunciation === "string"
               ? sec.banglaPronunciation.trim() || null
-              : null,
-          bengaliText: String(sec.bengaliText || "").trim(),
-          ...(Array.isArray(sec.sentences) ? { sentences: sec.sentences } : {}),
-        }));
+              : null;
+          const bnText = String(sec.bengaliText || "").trim();
+          const secType =
+            typeof sec.sectionType === "string" &&
+            ["story", "author", "introduction", "summary"].includes(
+              sec.sectionType
+            )
+              ? sec.sectionType
+              : undefined;
+
+          let sentencesVal: unknown = Array.isArray(sec.sentences)
+            ? sec.sentences
+            : undefined;
+          if (!sentencesVal && secType && secType !== "story") {
+            sentencesVal = [
+              {
+                en: enText,
+                bnPronounce: bnPron,
+                bn: bnText,
+                sectionType: secType,
+              },
+            ];
+          }
+
+          return {
+            orderIndex:
+              typeof sec.orderIndex === "number" ? sec.orderIndex : idx,
+            englishText: enText,
+            banglaPronunciation: bnPron,
+            bengaliText: bnText,
+            ...(sentencesVal ? { sentences: sentencesVal } : {}),
+          };
+        });
       } else {
         const enParagraphs = englishContent
           .split(/\n\s*\n/)
